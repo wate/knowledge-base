@@ -9,7 +9,7 @@ Knowledge Base
 - ローカル完結: 全処理をローカル環境で実行。外部API不要
 - 多言語ベクトル検索: intfloat/multilingual-e5-smallによる384次元ベクトル検索
 - 日本語全文検索: Lindera形態素解析 + DuckDB FTS(BM25)
-- **PageRank**: ドキュメント間リンク構造に基づく重要度スコアリング
+- PageRank: ドキュメント間リンク構造に基づく重要度スコアリング
 - プラグイン方式: `fetch-*.mjs` でソース種別ごとに拡張可能
 
 必要な外部ツール
