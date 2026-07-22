@@ -1,4 +1,4 @@
-KnowlEdge Base
+Knowledge Base
 =========================
 
 ローカル完結のベクトル検索エンジン。Markdown・HTMLドキュメントをDuckDBに取り込み、BM25全文検索・ベクトル検索・ハイブリッド検索を提供する。
