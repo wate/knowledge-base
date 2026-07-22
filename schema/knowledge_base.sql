@@ -18,8 +18,8 @@ CREATE SEQUENCE IF NOT EXISTS chapters_id_seq START 1;
 CREATE TABLE IF NOT EXISTS documents (
     id              INTEGER PRIMARY KEY DEFAULT nextval('documents_id_seq'), -- ドキュメントの一意識別子
     file_path       VARCHAR UNIQUE, -- URI識別子。ローカルは相対パス、WebはURL、ツールは scheme://...
-    content         VARCHAR,       -- YAMLフロントマター除去後のMarkdown全文
-    summary         VARCHAR,       -- 見出しtree構造テキスト（h1〜h6をインデントで表現、embeddingの入力）
+    content         TEXT,          -- YAMLフロントマター除去後のMarkdown全文
+    summary         TEXT,          -- 見出しtree構造テキスト（h1〜h6をインデントで表現、embeddingの入力）
     embedding       FLOAT[384],    -- summary（見出しtree）をベクトル化した384次元ベクトル
     pagerank_score  FLOAT DEFAULT 1.0, -- doc_linksのリンク構造からPageRankアルゴリズムで算出した重要度スコア
     modified        TIMESTAMP      -- ファイルの最終更新日時（mtime）
@@ -33,9 +33,9 @@ CREATE TABLE IF NOT EXISTS chapters (
     level           INTEGER,       -- 見出しレベル（1〜6、見出しがないファイルの場合はNULL）
     weight          FLOAT,         -- levelに応じた重み（h1=9.0 → h6=1.0、config.yamlで調整可能）
     chunk_index     INTEGER,       -- ドキュメント内での出現順（0始まり）
-    content         VARCHAR,       -- 章本文（MDASTから再変換したMarkdown、見出し行自体は含まない）
-    summary         VARCHAR,       -- 章の擬似要約（見出し＋最初の段落、embeddingの入力）
-    content_wakati  VARCHAR,       -- content をLinderaで分かち書きした結果（FTS/BM25検索に使用）
+    content         TEXT,          -- 章本文（MDASTから再変換したMarkdown、見出し行自体は含まない）
+    summary         TEXT,          -- 章の擬似要約（見出し＋最初の段落、embeddingの入力）
+    content_wakati  TEXT,          -- content をLinderaで分かち書きした結果（FTS/BM25検索に使用）
     embedding       FLOAT[384]     -- summary（章の擬似要約）をベクトル化した384次元ベクトル
 );
 
