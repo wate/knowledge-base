@@ -1,0 +1,30 @@
+# DuckDB database
+knowledge-base.duckdb
+knowledge-base.duckdb.*
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Transformers model cache
+config/models/
+
+# Temporary conversion output
+tmp/
+*.bak
+
+# External source files (large binaries - not tracked)
+external/
+
+# Lindera dictionary (55MB binary, regeneratable)
+schema/dict/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
