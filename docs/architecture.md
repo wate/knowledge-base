@@ -40,10 +40,20 @@ DuckDB (unknown_words / pos_master)
 -------------------------
 
 | 役割               | 採用技術                                     |
-| ------------------ | -------------------------------------------- |
+|--------------------|----------------------------------------------|
+| 設定管理           | config.yaml + lib/config.mjs (zx/js-yaml)    |
 | ベクトル化モデル   | intfloat/multilingual-e5-small (384次元)     |
 | ベクトル化実行基盤 | @huggingface/transformers (Node.js)          |
 | 形態素解析         | lindera-nodejs (NAPI-RS, IPADIC辞書)         |
+| ユーザー辞書ビルド | Lindera CLI (`lindera build --user`)         |
+| ベクトルDB         | DuckDB (FLOAT[384] + list_cosine_similarity) |
+| FTSエンジン        | DuckDB FTS拡張 (BM25)                        |
+| PageRank           | graphology + graphology-pagerank             |
+| Markdownパース     | remark + remark-gfm (MDAST)                  |
+| HTML変換           | rehype-parse + rehype-remark                 |
+| PDF変換            | pdfjs-dist legacy build                      |
+| Word変換           | mammoth.js                                   |
+| スクリプト実行基盤 | zx (Node.js)                                 |
 | ユーザー辞書ビルド | Lindera CLI (`lindera build --user`)         |
 | ベクトルDB         | DuckDB (FLOAT[384] + list_cosine_similarity) |
 | FTSエンジン        | DuckDB FTS拡張 (BM25)                        |
@@ -62,7 +72,7 @@ DuckDB (unknown_words / pos_master)
 ドキュメント全体の管理。`file_path` はURI形式で一意に識別する。
 
 | カラム         | 型             | 説明                                   |
-| -------------- | -------------- | -------------------------------------- |
+|----------------|----------------|----------------------------------------|
 | id             | INTEGER PK     | 自動採番                               |
 | file_path      | VARCHAR UNIQUE | URI識別子(相対パス/URL/Redmine://等)   |
 | content        | VARCHAR        | YAMLフロントマター除去後のMarkdown全文 |
@@ -76,7 +86,7 @@ DuckDB (unknown_words / pos_master)
 ドキュメントを見出し階層で分割した章単位。
 
 | カラム         | 型         | 説明                         |
-| -------------- | ---------- | ---------------------------- |
+|----------------|------------|------------------------------|
 | id             | INTEGER PK | 自動採番                     |
 | document_id    | INTEGER    | 親ドキュメントID             |
 | heading        | VARCHAR    | 見出しテキスト               |
@@ -93,7 +103,7 @@ DuckDB (unknown_words / pos_master)
 外部ソースの出典情報(鮮度管理用)。
 
 | カラム                   | 型         | 説明                          |
-| ------------------------ | ---------- | ----------------------------- |
+|--------------------------|------------|-------------------------------|
 | id                       | INTEGER PK | 自動採番                      |
 | document_id              | INTEGER FK | ドキュメントID                |
 | url                      | VARCHAR    | 取得元URL                     |
@@ -125,10 +135,10 @@ DuckDB (unknown_words / pos_master)
 擬似要約の生成
 -------------------------
 
-| 対象              | 内容                              | embedding入力          |
-| ----------------- | --------------------------------- | ---------------------- |
+| 対象              | 内容                            | embedding入力          |
+|-------------------|---------------------------------|------------------------|
 | documents.summary | 見出しtree(h1〜h6を`#`表記で連結) | passage: {見出しtree}  |
-| chapters.summary  | 見出し + 最初の段落               | passage: {見出し+段落} |
+| chapters.summary  | 見出し + 最初の段落             | passage: {見出し+段落} |
 
 データフロー
 -------------------------

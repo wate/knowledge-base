@@ -15,12 +15,12 @@ Knowledge Base
 必要な外部ツール
 -------------------------
 
-| ツール      | バージョン | 用途                                           | インストール確認    |
-| ----------- | ---------- | ---------------------------------------------- | ------------------- |
-| DuckDB      | v1.5+      | ベクトルDB/FTS                                 | `duckdb --version`  |
+| ツール      | バージョン | 用途                                         | インストール確認  |
+|-------------|------------|----------------------------------------------|-------------------|
+| DuckDB      | v1.5+      | ベクトルDB/FTS                               | `duckdb --version` |
 | Lindera CLI | latest     | ユーザー辞書コンパイル(`lindera build --user`) | `lindera --version` |
-| Node.js     | v24+       | 全スクリプト実行基盤                           | `node --version`    |
-| zx          | ^8.x       | スクリプト実行環境                             | `npm install -g zx` |
+| Node.js     | v24+       | 全スクリプト実行基盤                         | `node --version`  |
+| zx          | ^8.x       | スクリプト実行環境                           | `npm install -g zx` |
 
 DuckDBは[DuckDBのサイト](https://duckdb.org)から、Lindera CLIのインストールは[GitHub](https://github.com/lindera/lindera)を参照。
 zxはグローバルインストール必須(`npm install -g zx`)。全スクリプトは `zx` コマンドで実行する。
@@ -38,7 +38,7 @@ npm install
 ### スキーマ作成
 
 ```bash
-duckdb knowledge-base.duckdb < schema/knowledge_base.sql
+duckdb knowledge-base.duckdb < docs/schema.sql
 ```
 
 ### ドキュメントの取り込み
@@ -137,7 +137,7 @@ zx search.mjs --hybrid "検索クエリ"
 ```
 knowledge-base/
 ├ package.json            # 依存パッケージ管理
-├ config.yaml             # 検索スコア係数設定
+├ config.yaml             # ナレッジベース全体設定
 ├ ingest.mjs              # 取り込みパイプライン
 ├ search.mjs              # BM25/ベクトル/ハイブリッド検索
 ├ update-embeddings.mjs   # embedding生成（--force対応）
@@ -154,20 +154,23 @@ knowledge-base/
 ├ export-pos-master.mjs    # pos_masterテーブルCSV出力
 ├ import-pos-master.mjs    # 編集済みCSVをpos_masterに取り込み
 ├ lib/
+│ ├ config.mjs        # 設定読み込み共通モジュール
 │ ├ embed.mjs         # embedding共通モジュール
 │ ├ convert.mjs       # 変換共通（正規化）
 │ └ lindera.mjs       # Linderaバインディング共通モジュール
 ├ knowledge-base.duckdb   # DuckDBデータベースファイル
-├ schema/
-│ └ knowledge_base.sql    # DDL（全テーブル）
-└ docs/                   # 設計ドキュメント
+├ docs/
+│ ├ schema.sql            # DDL（全テーブル）
+│ ├ config-reference.md   # 設定リファレンス
+│ └ ...                   # 設計ドキュメント
+└ dict/                   # Lindera辞書
 ```
 
 対応ファイル形式
 -------------------------
 
 | 形式          | 変換方式                     | 優先度   |
-| ------------- | ---------------------------- | -------- |
+|---------------|------------------------------|----------|
 | Markdown(.md) | remark MDASTパース           | 完了     |
 | HTML(.html)   | rehype-parse + rehype-remark | 完了     |
 | PDF           | pdfjs-dist legacy            | 将来検討 |
@@ -176,13 +179,13 @@ knowledge-base/
 DBテーブル
 -------------------------
 
-| テーブル        | 説明                                                   |
-| --------------- | ------------------------------------------------------ |
-| `documents`     | ドキュメント全体(全文・見出しtree・ベクトル・PageRank) |
-| `chapters`      | 章単位(本文・擬似要約・分かち書き・ベクトル)           |
-| `doc_links`     | ドキュメント間リンク(PageRank計算用)                   |
-| `sources`       | 外部ソース出典情報(URL・取得日・種別)                  |
-| `pos_master`    | 品詞マスタ(未知語レビュー時の選択肢)                   |
+| テーブル      | 説明                                                   |
+|---------------|--------------------------------------------------------|
+| `documents`   | ドキュメント全体(全文・見出しtree・ベクトル・PageRank) |
+| `chapters`    | 章単位(本文・擬似要約・分かち書き・ベクトル)           |
+| `doc_links`   | ドキュメント間リンク(PageRank計算用)                   |
+| `sources`     | 外部ソース出典情報(URL・取得日・種別)                  |
+| `pos_master`  | 品詞マスタ(未知語レビュー時の選択肢)                   |
 | `unknown_words` | 未知語管理(レビュー・ユーザー辞書出力の基盤)           |
 
 今後の検討材料
@@ -191,8 +194,8 @@ DBテーブル
 - PDF対応: `pdfjs-dist` によるテキスト抽出の本格実装
 - Word(.docx)対応: `mammoth.js` による変換処理の本格実装
 - Excel(.xlsx)対応: 表データの取り込み
-- 設定ファイル対応: ノイズフィルタ・DBパス・出力先などを `config.yaml` に集約
-- 変換後処理パイプライン: 各形式の変換後、正規化やAIサービスによる構造化などの後処理スクリプトを設定ファイルで指定可能にする
+- 設定ファイル対応(ノイズフィルタ外部化: Phase 2)
+- 変換後処理パイプライン(Phase 3)
 - Webインターフェース/API: ブラウザ上での管理UIやAPIエンドポイントによる外部連携
 
 ライセンス

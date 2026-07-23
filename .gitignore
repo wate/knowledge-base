@@ -19,7 +19,7 @@ tmp/
 external/
 
 # Lindera dictionary (55MB binary, regeneratable)
-schema/dict/
+dict/
 
 # OS files
 .DS_Store

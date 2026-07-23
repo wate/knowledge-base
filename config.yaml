@@ -1,18 +1,62 @@
-# ナレッジベース 検索設定
 # =========================
+# ナレッジベース 全体設定
+# =========================
+# 設定優先順位: CLI引数 > config.yaml > 環境変数 > デフォルト値
 # このファイルの値を変更すると検索スコアの計算に反映されます。
 
+# ----------
+# 解析対象ディレクトリ
+# ----------
+# unknown_word_detection と ingest で共通。
+# CLI引数(--source-dir)で上書き可。
+source_dirs:
+  - ../docs
+
+# ----------
+# データベース
+# ----------
+database:
+  # DBファイルのパス（knowledge-base/ からの相対パス）
+  path: knowledge-base.duckdb
+
+# ----------
+# Lindera辞書
+# ----------
+dictionary:
+  # 標準辞書ディレクトリ（knowledge-base/ からの相対パス）
+  system_dir: dict/lindera-ipadic
+  # ユーザー辞書ファイル（存在しない場合は読み込まない）
+  user_dict: dict/user_dictionary/user-dict.bin
+
+# ----------
+# ドキュメント取り込み
+# ----------
+ingest:
+  # チャプター分割の最小見出しレベル
+  min_heading_level: 3
+  # 除外ディレクトリ/ファイルのパターン（glob）
+  exclude_patterns:
+    - node_modules/**
+    - .git/**
+    - vendor/**
+
+# ----------
 # ベクトル化設定
+# ----------
 embedding:
   model: intfloat/multilingual-e5-small
   dimensions: 384
   batch_size: 32
 
+# ----------
 # 章立て設定
+# ----------
 chapter:
   min_heading_level: 3
 
+# ----------
 # 検索スコア係数（合計が1.0になるように設定）
+# ----------
 search:
   # 2段階検索の第1段階で取得する上位N件
   top_n_documents: 10
@@ -29,7 +73,9 @@ search:
     vector: 0.7 # ベクトルスコア（上記 weights の合算値）
     bm25: 0.3 # BM25スコア
 
+# ----------
 # 見出しレベルごとの重み
+# ----------
 heading_weights:
   1: 9.0
   2: 6.0
@@ -37,3 +83,18 @@ heading_weights:
   4: 2.0
   5: 1.5
   6: 1.0
+
+# ----------
+# 未知語検出（Phase 2以降で拡張）
+# ----------
+unknown_word_detection:
+  # 解析対象ディレクトリ（未指定時は上位の source_dirs を使用）
+  source_dirs:
+  # ノイズフィルタ（Phase 2 で実装）
+  filters:
+
+# ----------
+# 変換後処理パイプライン（Phase 3 で実装）
+# ----------
+pipeline:
+  post_process:

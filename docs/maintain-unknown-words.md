@@ -65,7 +65,7 @@ npm run detect-unk -- --source-dir ../docs
 npm run export-unknown-words
 ```
 
-出力先: `schema/dict/unknown-words.csv`(全カラム、ヘッダーあり)
+出力先: `dict/unknown-words.csv`(全カラム、ヘッダーあり)
 
 CSVをExcelやVS Codeで開き、以下のカラムを編集する。
 
@@ -121,14 +121,14 @@ npm run build-user-dict
 ```
 
 上記で `export-user-dict` + `lindera build --user` が順次実行され、
-`schema/dict/user_dictionary/user-dict.bin` が生成される。
+`dict/user_dictionary/user-dict.bin` が生成される。
 
 ### 分かち書きの確認
 
 ```bash
 echo "DuckDBとCakePHPを利用する" | lindera tokenize \
-  --dict schema/dict/lindera-ipadic \
-  --user-dict schema/dict/user_dictionary/user-dict.bin \
+  --dict dict/lindera-ipadic \
+  --user-dict dict/user_dictionary/user-dict.bin \
   -o wakati
 ```
 
@@ -192,7 +192,7 @@ LIMIT 1;
 - `export-pos-master.mjs` - 品詞マスタCSV出力
 - `import-pos-master.mjs` - 品詞マスタCSV取り込み
 - `export-user-dict.mjs` - ユーザー辞書ビルド用CSV出力
-- `schema/dict/unknown-words.csv` - レビュー用CSV
-- `schema/dict/pos-master.csv` - 品詞マスタCSV
-- `schema/dict/user-dict.csv` - ビルド用CSV
-- `schema/dict/user_dictionary/user-dict.bin` - コンパイル済みユーザー辞書
+- `dict/unknown-words.csv` - レビュー用CSV
+- `dict/pos-master.csv` - 品詞マスタCSV
+- `dict/user-dict.csv` - ビルド用CSV
+- `dict/user_dictionary/user-dict.bin` - コンパイル済みユーザー辞書

@@ -5,7 +5,7 @@
 -- CREATE SEQUENCE + DEFAULT nextval() でオートインクリメントを実現する。
 --
 -- 使い方:
---   初回セットアップ: duckdb knowledge-base.duckdb < schema/knowledge_base.sql
+--   初回セットアップ: duckdb knowledge-base.duckdb < docs/schema.sql
 --   FTSインデックスは ingest.mjs の取り込み完了後に自動生成される
 
 INSTALL fts;

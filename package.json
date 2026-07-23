@@ -10,7 +10,7 @@
     "import-pos-master": "zx import-pos-master.mjs",
     "export-user-dict": "zx export-user-dict.mjs",
     "export-user-dict-detailed": "zx export-user-dict.mjs --detailed",
-    "build-user-dict": "zx export-user-dict.mjs && mkdir -p schema/dict/user_dictionary && lindera build --src schema/dict/user-dict.csv --dest schema/dict/user_dictionary --metadata schema/dict/lindera-ipadic/metadata.json --user"
+    "build-user-dict": "zx export-user-dict.mjs && mkdir -p dict/user_dictionary && lindera build --src dict/user-dict.csv --dest dict/user_dictionary --metadata dict/lindera-ipadic/metadata.json --user"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
