@@ -1,4 +1,6 @@
 # DuckDB database
+knowledge-base.db
+knowledge-base.db.*
 knowledge-base.duckdb
 knowledge-base.duckdb.*
 
