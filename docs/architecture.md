@@ -21,6 +21,19 @@ DuckDB (documents / chapters / doc_links / sources)
     │
     ▼
 search.mjs                     ← BM25 / ベクトル / ハイブリッド検索
+
+--- 未知語検出 後処理パイプライン ---
+
+DuckDB (unknown_words / pos_master)
+    │
+    ▲ detect-unk.mjs              ← Lindera Tokenizer ← chapters.content
+    │
+    ├ export-unknown-words.mjs    → CSV（人間編集用）
+    ├ import-unknown-words.mjs    ← CSV（編集済み）→ DB UPSERT
+    ├ export-pos-master.mjs       → CSV（品詞マスタ編集用）
+    ├ import-pos-master.mjs       ← CSV → DB UPSERT
+    ├ export-user-dict.mjs        → CSV（Linderaビルド用）
+    └ build-user-dict.mjs         → コンパイル済みユーザー辞書
 ```
 
 技術スタック
@@ -84,7 +97,7 @@ search.mjs                     ← BM25 / ベクトル / ハイブリッド検�
 | document_id              | INTEGER FK | ドキュメントID                |
 | url                      | VARCHAR    | 取得元URL                     |
 | source_type              | VARCHAR    | web / local_file / Redmine 等 |
-| fetched_at               | TIMESTAMP  | 取得日                        |
+| fetched                  | TIMESTAMP  | 取得日                        |
 | UNIQUE(url, document_id) |            | 重複防止                      |
 
 検索スコア設計
@@ -119,6 +132,8 @@ search.mjs                     ← BM25 / ベクトル / ハイブリッド検�
 データフロー
 -------------------------
 
+### 取り込みパイプライン
+
 ```
 fetch-web.mjs <URL>          fetch-local.mjs <file>
     │                              │
@@ -138,6 +153,34 @@ fetch-web.mjs <URL>          fetch-local.mjs <file>
                │
                ▼
           update-pagerank.mjs (md-links → doc_links → PageRank)
+```
+
+### 未知語検出 後処理パイプライン
+
+未知語検出は取り込みとは独立した後処理として実行する。
+
+```
+chapters.content
+    │
+    ▼
+detect-unk.mjs               ← Lindera Tokenizer + UNK_FILTERS
+    │
+    ▼
+unknown_words (DuckDB)
+    │
+    ├ export-unknown-words.mjs  →  unknown-words.csv (全カラム、ヘッダーあり)
+    │                               ↓ 人間がExcel編集
+    └ import-unknown-words.mjs  ←  unknown-words.csv (編集済み) → UPSERT
+    │
+    ├ export-pos-master.mjs     →  pos-master.csv
+    │                               ↓ 人間が編集
+    └ import-pos-master.mjs     ←  pos-master.csv → UPSERT
+    │
+    ├ export-user-dict.mjs      →  user-dict.csv (Simple/Detailed形式)
+    └ build-user-dict.mjs       →  lindera build --user → ユーザー辞書
+    │
+    ▼
+ingest.mjs (tokenizeWithLindera で --user-dict 参照)
 ```
 
 プラグイン方式

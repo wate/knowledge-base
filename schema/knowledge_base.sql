@@ -13,6 +13,8 @@ LOAD fts;
 
 CREATE SEQUENCE IF NOT EXISTS documents_id_seq START 1;
 CREATE SEQUENCE IF NOT EXISTS chapters_id_seq START 1;
+CREATE SEQUENCE IF NOT EXISTS sources_id_seq START 1;
+CREATE SEQUENCE IF NOT EXISTS pos_master_id_seq START 1;
 
 -- documents: 取り込んだMarkdownファイル1件につき1行のドキュメント管理テーブル
 CREATE TABLE IF NOT EXISTS documents (
@@ -54,6 +56,46 @@ CREATE TABLE IF NOT EXISTS sources (
     document_id     INTEGER REFERENCES documents(id), -- ドキュメントのID（外部キー制約）
     url             VARCHAR,       -- 取得元のURLまたはURI（file://, smb://等）
     source_type     VARCHAR,       -- ソース種別: 'web', 'project_tool', 'local_file', 'nas' 等
-    fetched_at      TIMESTAMP,     -- 外部情報取得日
+    fetched         TIMESTAMP,     -- 外部情報取得日
     UNIQUE(url, document_id)       -- 同じURLが同じドキュメントに重複登録されるのを防止
+);
+
+-- pos_master: 品詞マスタ（未知語レビュー時のプルダウン選択肢として使用）
+CREATE TABLE IF NOT EXISTS pos_master (
+    id    INTEGER PRIMARY KEY DEFAULT nextval('pos_master_id_seq'), -- 品詞ID（自動採番）
+    name  VARCHAR NOT NULL,    -- 品詞名（例: 'カスタム名詞'）
+    note  VARCHAR              -- 補足（任意）
+);
+
+INSERT INTO pos_master (name) VALUES
+    ('カスタム名詞'),
+    ('固有名詞'),
+    ('一般名詞')
+ON CONFLICT DO NOTHING;
+
+-- unknown_words: 未知語管理テーブル
+-- pos_idが設定済み（かつ除外されていない）レコードをCSV出力してLinderaユーザー辞書として利用する
+CREATE TABLE IF NOT EXISTS unknown_words (
+    word             VARCHAR PRIMARY KEY, -- 表層形
+    excluded         BOOLEAN DEFAULT false, -- 除外フラグ
+    source_docs      VARCHAR,              -- 出現元ドキュメント（複数ある場合はカンマ区切り等）
+    note             VARCHAR,              -- 自由記述の補足
+
+    -- ユーザー辞書用カラム（Detailed形式に相当。pos_id以外は初期値を設定）
+    left_id          INTEGER DEFAULT 0,    -- 左文脈ID
+    right_id         INTEGER DEFAULT 0,    -- 右文脈ID
+    cost             INTEGER DEFAULT -1000, -- コスト
+    pos_master_id    INTEGER REFERENCES pos_master(id), -- 品詞（NULL = 未レビュー）
+    pos_detail1      VARCHAR DEFAULT '*',
+    pos_detail2      VARCHAR DEFAULT '*',
+    pos_detail3      VARCHAR DEFAULT '*',
+    conjugation_type VARCHAR DEFAULT '*',  -- 活用型
+    conjugation_form VARCHAR DEFAULT '*',  -- 活用形
+    base_form        VARCHAR,              -- 基本形（通常はwordと同じ）
+    reading          VARCHAR,              -- 読み（カタカナ、人間が入力）
+    pronunciation    VARCHAR,              -- 発音（カタカナ）
+
+    -- レコード管理用
+    created          TIMESTAMP DEFAULT current_timestamp, -- 登録日時
+    modified         TIMESTAMP DEFAULT current_timestamp  -- 最終更新日時
 );

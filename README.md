@@ -70,7 +70,55 @@ zx update-embeddings.mjs --force
 zx update-pagerank.mjs <target_dir>
 ```
 
-### 検索
+### 未知語検出とユーザー辞書
+
+Linderaの未知語(UNK)を検出し、レビュー後にユーザー辞書として活用する一連のフロー。
+
+```
+detect-unk.mjs  →  unknown_words(DB)
+                     ↓
+                export-unknown-words.mjs  →  CSV(人間編集)
+                     ↓
+                import-unknown-words.mjs  ←  CSV→DB反映
+                     ↓
+                export-user-dict.mjs      →  CSV(Linderaビルド用)
+                     ↓
+                build-user-dict.mjs       →  ユーザー辞書
+```
+
+### UNK抽出
+
+```bash
+# 全ドキュメントから未知語を抽出
+npm run detect-unk
+
+# 先頭10件のみテスト
+npm run detect-unk -- --limit 10
+```
+
+### レビュー用CSV入出力
+
+```bash
+# unknown_words → CSV（Excel編集用）
+npm run export-unknown-words
+
+# 編集済みCSV → DBに一括反映（wordをキーにUPSERT）
+npm run import-unknown-words
+npm run import-unknown-words -- path/to/edited.csv
+```
+
+### 品詞マスタメンテナンス
+
+```bash
+# pos_master → CSV
+npm run export-pos-master
+
+# 編集済みCSV → DB反映（idありUPSERT、idなし新規INSERT）
+npm run import-pos-master
+```
+
+検索
+-------------------------
 
 ```bash
 # BM25全文検索
@@ -90,8 +138,6 @@ zx search.mjs --hybrid "検索クエリ"
 knowledge-base/
 ├ package.json            # 依存パッケージ管理
 ├ config.yaml             # 検索スコア係数設定
-├ schema/
-│ └ knowledge_base.sql    # DDL（documents/chapters/doc_links/sources）
 ├ ingest.mjs              # 取り込みパイプライン
 ├ search.mjs              # BM25/ベクトル/ハイブリッド検索
 ├ update-embeddings.mjs   # embedding生成（--force対応）
@@ -104,7 +150,14 @@ knowledge-base/
 ├ fetch-web.mjs           # Web取得→変換→フロントマター付与
 ├ fetch-local.mjs         # ローカルファイル変換→フロントマター付与
 ├ extract-urls.mjs        # MarkdownからURL抽出
+├ detect-unk.mjs          # Linderaで未知語(UNK)抽出
+├ export-unknown-words.mjs # unknown_wordsテーブルCSV出力
+├ import-unknown-words.mjs # 編集済みCSVをunknown_wordsに取り込み
+├ export-pos-master.mjs    # pos_masterテーブルCSV出力
+├ import-pos-master.mjs    # 編集済みCSVをpos_masterに取り込み
 ├ knowledge-base.duckdb   # DuckDBデータベースファイル
+├ schema/
+│ └ knowledge_base.sql    # DDL（全テーブル）
 └ docs/                   # 設計ドキュメント
 ```
 
@@ -121,12 +174,24 @@ knowledge-base/
 DBテーブル
 -------------------------
 
-| テーブル    | 説明                                                   |
-| ----------- | ------------------------------------------------------ |
-| `documents` | ドキュメント全体(全文・見出しtree・ベクトル・PageRank) |
-| `chapters`  | 章単位(本文・擬似要約・分かち書き・ベクトル)           |
-| `doc_links` | ドキュメント間リンク(PageRank計算用)                   |
-| `sources`   | 外部ソース出典情報(URL・取得日・種別)                  |
+| テーブル        | 説明                                                   |
+| --------------- | ------------------------------------------------------ |
+| `documents`     | ドキュメント全体(全文・見出しtree・ベクトル・PageRank) |
+| `chapters`      | 章単位(本文・擬似要約・分かち書き・ベクトル)           |
+| `doc_links`     | ドキュメント間リンク(PageRank計算用)                   |
+| `sources`       | 外部ソース出典情報(URL・取得日・種別)                  |
+| `pos_master`    | 品詞マスタ(未知語レビュー時の選択肢)                   |
+| `unknown_words` | 未知語管理(レビュー・ユーザー辞書出力の基盤)           |
+
+今後の検討材料
+-------------------------
+
+- PDF対応: `pdfjs-dist` によるテキスト抽出の本格実装
+- Word(.docx)対応: `mammoth.js` による変換処理の本格実装
+- Excel(.xlsx)対応: 表データの取り込み
+- 設定ファイル対応: ノイズフィルタ・DBパス・出力先などを `config.yaml` に集約
+- 変換後処理パイプライン: 各形式の変換後、正規化やAIサービスによる構造化などの後処理スクリプトを設定ファイルで指定可能にする
+- Webインターフェース/API: ブラウザ上での管理UIやAPIエンドポイントによる外部連携
 
 ライセンス
 -------------------------
