@@ -142,11 +142,9 @@ knowledge-base/
 ├ search.mjs              # BM25/ベクトル/ハイブリッド検索
 ├ update-embeddings.mjs   # embedding生成（--force対応）
 ├ update-pagerank.mjs     # PageRank更新
-├ embed-lib.mjs           # embedding共通モジュール
 ├ convert-html.mjs        # HTML→Markdown変換
 ├ convert-pdf.mjs         # PDF→テキスト変換
 ├ convert-docx.mjs        # Word→Markdown変換
-├ convert-lib.mjs         # 変換共通（正規化）
 ├ fetch-web.mjs           # Web取得→変換→フロントマター付与
 ├ fetch-local.mjs         # ローカルファイル変換→フロントマター付与
 ├ extract-urls.mjs        # MarkdownからURL抽出
@@ -155,6 +153,10 @@ knowledge-base/
 ├ import-unknown-words.mjs # 編集済みCSVをunknown_wordsに取り込み
 ├ export-pos-master.mjs    # pos_masterテーブルCSV出力
 ├ import-pos-master.mjs    # 編集済みCSVをpos_masterに取り込み
+├ lib/
+│ ├ embed.mjs         # embedding共通モジュール
+│ ├ convert.mjs       # 変換共通（正規化）
+│ └ lindera.mjs       # Linderaバインディング共通モジュール
 ├ knowledge-base.duckdb   # DuckDBデータベースファイル
 ├ schema/
 │ └ knowledge_base.sql    # DDL（全テーブル）
