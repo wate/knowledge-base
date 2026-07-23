@@ -15,12 +15,12 @@ Knowledge Base
 必要な外部ツール
 -------------------------
 
-| ツール      | バージョン | 用途                         | インストール確認    |
-| ----------- | ---------- | ---------------------------- | ------------------- |
-| DuckDB      | v1.5+      | ベクトルDB/FTS               | `duckdb --version`  |
-| Lindera CLI | latest     | 日本語形態素解析(分かち書き) | `lindera --version` |
-| Node.js     | v24+       | 全スクリプト実行基盤         | `node --version`    |
-| zx          | ^8.x       | スクリプト実行環境           | `npm install -g zx` |
+| ツール      | バージョン | 用途                                           | インストール確認    |
+| ----------- | ---------- | ---------------------------------------------- | ------------------- |
+| DuckDB      | v1.5+      | ベクトルDB/FTS                                 | `duckdb --version`  |
+| Lindera CLI | latest     | ユーザー辞書コンパイル(`lindera build --user`) | `lindera --version` |
+| Node.js     | v24+       | 全スクリプト実行基盤                           | `node --version`    |
+| zx          | ^8.x       | スクリプト実行環境                             | `npm install -g zx` |
 
 DuckDBは[DuckDBのサイト](https://duckdb.org)から、Lindera CLIのインストールは[GitHub](https://github.com/lindera/lindera)を参照。
 zxはグローバルインストール必須(`npm install -g zx`)。全スクリプトは `zx` コマンドで実行する。
