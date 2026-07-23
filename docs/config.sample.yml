@@ -1,29 +1,29 @@
 # =========================
-# ナレッジベース 全体設定
+# ナレッジベース 全体設定（サンプル）
 # =========================
-# 設定優先順位: CLI引数 > config.yaml > 環境変数 > デフォルト値
-# このファイルの値を変更すると検索スコアの計算に反映されます。
+# 設定優先順位: CLI引数 > config.yml > 環境変数 > デフォルト値
+#
+# プロジェクトルートに .knowledge-base.yml として配置することを想定。
+# パスはプロジェクトルートからの相対パスで記述する。
 
 # ----------
 # 解析対象ディレクトリ
 # ----------
-# unknown_word_detection と ingest で共通。
-# CLI引数(--source-dir)で上書き可。
 source_dirs:
-  - ../docs
+  - docs
 
 # ----------
 # データベース
 # ----------
 database:
-  # DBファイルのパス（knowledge-base/ からの相対パス）
+  # DBファイルのパス（プロジェクトルートからの相対パス）
   path: knowledge-base.duckdb
 
 # ----------
 # Lindera辞書
 # ----------
 dictionary:
-  # 標準辞書ディレクトリ（knowledge-base/ からの相対パス）
+  # 標準辞書ディレクトリ（プロジェクトルートからの相対パス）
   system_dir: dict/lindera-ipadic
   # ユーザー辞書ファイル（存在しない場合は読み込まない）
   user_dict: dict/user_dictionary/user-dict.bin
@@ -47,6 +47,7 @@ embedding:
   model: intfloat/multilingual-e5-small
   dimensions: 384
   batch_size: 32
+  cache_dir: tmp/models
 
 # ----------
 # 章立て設定

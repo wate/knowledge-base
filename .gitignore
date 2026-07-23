@@ -8,7 +8,7 @@ knowledge-base.duckdb.*
 node_modules/
 package-lock.json
 
-# Transformers model cache
+# Transformers model cache（tmp/models/ に移動。config/models/ は旧形式）
 config/models/
 
 # Temporary conversion output

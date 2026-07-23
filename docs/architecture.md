@@ -39,77 +39,26 @@ DuckDB (unknown_words / pos_master)
 技術スタック
 -------------------------
 
-| 役割               | 採用技術                                     |
-|--------------------|----------------------------------------------|
-| 設定管理           | config.yaml + lib/config.mjs (zx/js-yaml)    |
-| ベクトル化モデル   | intfloat/multilingual-e5-small (384次元)     |
-| ベクトル化実行基盤 | @huggingface/transformers (Node.js)          |
-| 形態素解析         | lindera-nodejs (NAPI-RS, IPADIC辞書)         |
-| ユーザー辞書ビルド | Lindera CLI (`lindera build --user`)         |
-| ベクトルDB         | DuckDB (FLOAT[384] + list_cosine_similarity) |
-| FTSエンジン        | DuckDB FTS拡張 (BM25)                        |
-| PageRank           | graphology + graphology-pagerank             |
-| Markdownパース     | remark + remark-gfm (MDAST)                  |
-| HTML変換           | rehype-parse + rehype-remark                 |
-| PDF変換            | pdfjs-dist legacy build                      |
-| Word変換           | mammoth.js                                   |
-| スクリプト実行基盤 | zx (Node.js)                                 |
-| ユーザー辞書ビルド | Lindera CLI (`lindera build --user`)         |
-| ベクトルDB         | DuckDB (FLOAT[384] + list_cosine_similarity) |
-| FTSエンジン        | DuckDB FTS拡張 (BM25)                        |
-| PageRank           | graphology + graphology-pagerank             |
-| Markdownパース     | remark + remark-gfm (MDAST)                  |
-| HTML変換           | rehype-parse + rehype-remark                 |
-| PDF変換            | pdfjs-dist legacy build                      |
-| Word変換           | mammoth.js                                   |
-| スクリプト実行基盤 | zx (Node.js)                                 |
+| 役割               | 採用技術                                          |
+|--------------------|---------------------------------------------------|
+| 設定管理           | .knowledge-base.yml + lib/config.mjs (zx/js-yaml) |
+| ベクトル化モデル   | intfloat/multilingual-e5-small (384次元)          |
+| ベクトル化実行基盤 | @huggingface/transformers (Node.js)               |
+| 形態素解析         | lindera-nodejs (NAPI-RS, IPADIC辞書)              |
+| ユーザー辞書ビルド | Lindera CLI (`lindera build --user`)              |
+| ベクトルDB         | DuckDB (FLOAT[384] + list_cosine_similarity)      |
+| FTSエンジン        | DuckDB FTS拡張 (BM25)                             |
+| PageRank           | graphology + graphology-pagerank                  |
+| Markdownパース     | remark + remark-gfm (MDAST)                       |
+| HTML変換           | rehype-parse + rehype-remark                      |
+| PDF変換            | pdfjs-dist legacy build                           |
+| Word変換           | mammoth.js                                        |
+| スクリプト実行基盤 | zx (Node.js)                                      |
 
 テーブル構成
 -------------------------
 
-### documents
-
-ドキュメント全体の管理。`file_path` はURI形式で一意に識別する。
-
-| カラム         | 型             | 説明                                   |
-|----------------|----------------|----------------------------------------|
-| id             | INTEGER PK     | 自動採番                               |
-| file_path      | VARCHAR UNIQUE | URI識別子(相対パス/URL/Redmine://等)   |
-| content        | VARCHAR        | YAMLフロントマター除去後のMarkdown全文 |
-| summary        | VARCHAR        | 見出しtree構造テキスト(embedding入力)  |
-| embedding      | FLOAT[384]     | summaryのベクトル                      |
-| pagerank_score | FLOAT          | PageRankスコア(デフォルト1.0)          |
-| modified       | TIMESTAMP      | 最終更新日時                           |
-
-### chapters
-
-ドキュメントを見出し階層で分割した章単位。
-
-| カラム         | 型         | 説明                         |
-|----------------|------------|------------------------------|
-| id             | INTEGER PK | 自動採番                     |
-| document_id    | INTEGER    | 親ドキュメントID             |
-| heading        | VARCHAR    | 見出しテキスト               |
-| level          | INTEGER    | 見出しレベル(1〜6)           |
-| weight         | FLOAT      | レベルに応じた重み           |
-| chunk_index    | INTEGER    | 出現順(0始まり)              |
-| content        | VARCHAR    | 章本文                       |
-| summary        | VARCHAR    | 擬似要約(見出し+最初の段落)  |
-| content_wakati | VARCHAR    | Lindera分かち書き結果(FTS用) |
-| embedding      | FLOAT[384] | summaryのベクトル            |
-
-### sources
-
-外部ソースの出典情報(鮮度管理用)。
-
-| カラム                   | 型         | 説明                          |
-|--------------------------|------------|-------------------------------|
-| id                       | INTEGER PK | 自動採番                      |
-| document_id              | INTEGER FK | ドキュメントID                |
-| url                      | VARCHAR    | 取得元URL                     |
-| source_type              | VARCHAR    | web / local_file / Redmine 等 |
-| fetched                  | TIMESTAMP  | 取得日                        |
-| UNIQUE(url, document_id) |            | 重複防止                      |
+テーブル定義の詳細は[schema.sql](schema.sql)を参照。
 
 検索スコア設計
 -------------------------
@@ -130,7 +79,7 @@ DuckDB (unknown_words / pos_master)
            + BM25スコア(正規化) × 0.3
 ```
 
-各係数は `config.yaml` で外部調整可能。
+各係数は `.knowledge-base.yml` で外部調整可能。
 
 擬似要約の生成
 -------------------------

@@ -4,33 +4,34 @@
 設定ファイル
 -------------------------
 
-ナレッジベースの設定は `config.yaml` で管理する。
+ナレッジベースの設定はプロジェクトルートの `.knowledge-base.yml` で管理する。
+サンプル設定は[config.sample.yml](config.sample.yml)を参照。
 
 ### 設定優先順位
 
 設定値の解決は以下の優先順位で行う(番号が小さいほど優先)。
 
-| 優先順位 | ソース       | 例                                           |
-| -------- | ------------ | -------------------------------------------- |
-| 1        | CLI引数      | `--source-dir ../docs`                       |
-| 2        | config.yaml  | 設定ファイルに明示的に書かれた値             |
-| 3        | 環境変数     | `KNOWLEDGE_BASE_DB_PATH=/path/to/db`         |
-| 4        | デフォルト値 | 各スクリプトに組み込まれた初期値(後方互換用) |
+| 優先順位 | ソース              | 例                                           |
+| -------- | ------------------- | -------------------------------------------- |
+| 1        | CLI引数             | `--source-dir docs`                          |
+| 2        | .knowledge-base.yml | 設定ファイルに明示的に書かれた値             |
+| 3        | 環境変数            | `KNOWLEDGE_BASE_DB_PATH=/path/to/db`         |
+| 4        | デフォルト値        | 各スクリプトに組み込まれた初期値(後方互換用) |
 
 ### 環境変数一覧
 
-| 環境変数                         | 対応設定項目             | デフォルト値                         |
-| -------------------------------- | ------------------------ | ------------------------------------ |
-| `KNOWLEDGE_BASE_DB_PATH`         | `database.path`          | `knowledge-base.duckdb`              |
-| `KNOWLEDGE_BASE_DICT_DIR`        | `dictionary.system_dir`  | `dict/lindera-ipadic`                |
-| `KNOWLEDGE_BASE_USER_DICT_PATH`  | `dictionary.user_dict`   | `dict/user_dictionary/user-dict.bin` |
-| `KNOWLEDGE_BASE_EMBEDDING_MODEL` | `embedding.model`        | `intfloat/multilingual-e5-small`     |
-| `KNOWLEDGE_BASE_TOP_N`           | `search.top_n_documents` | `10`                                 |
+| 環境変数                         | 対応設定項目             | デフォルト値                                        |
+| -------------------------------- | ------------------------ | --------------------------------------------------- |
+| `KNOWLEDGE_BASE_DB_PATH`         | `database.path`          | `knowledge-base.duckdb`                             |
+| `KNOWLEDGE_BASE_DICT_DIR`        | `dictionary.system_dir`  | `knowledge-base/dict/lindera-ipadic`                |
+| `KNOWLEDGE_BASE_USER_DICT_PATH`  | `dictionary.user_dict`   | `knowledge-base/dict/user_dictionary/user-dict.bin` |
+| `KNOWLEDGE_BASE_EMBEDDING_MODEL` | `embedding.model`        | `intfloat/multilingual-e5-small`                    |
+| `KNOWLEDGE_BASE_TOP_N`           | `search.top_n_documents` | `10`                                                |
 
 ### パス解決
 
-`config.yaml` 内の相対パスは**ワーキングディレクトリ(プロセスカレント)**基準で絶対パスに解決する。
-設定ファイルがconfig/配下など奥にある場合も、ワーキングディレクトリからの相対パスで記述する。
+`.knowledge-base.yml` 内の相対パスは**ワーキングディレクトリ(プロセスカレント)**基準で絶対パスに解決する。
+npm scriptsを `knowledge-base/` から実行する場合はパスの先頭に `knowledge-base/` を付けず、カレントディレクトリからの相対パスで記述する。
 
 設定セクション一覧
 -------------------------
@@ -41,7 +42,7 @@
 
 ```yaml
 source_dirs:
-  - ../docs
+  - docs
 ```
 
 - CLI引数 `--source-dir` で上書き可能
@@ -98,11 +99,13 @@ embedding:
   model: intfloat/multilingual-e5-small
   dimensions: 384
   batch_size: 32
+  cache_dir: tmp/models
 ```
 
 - `model`: HuggingFaceのembeddingモデル名
 - `dimensions`: 出力ベクトルの次元数
 - `batch_size`: バッチサイズ
+- `cache_dir`: モデルキャッシュディレクトリ(ワーキングディレクトリからの相対パス、デフォルト: `tmp/models`)
 
 ### `chapter`
 
