@@ -15,12 +15,12 @@ Knowledge Base
 必要な外部ツール
 -------------------------
 
-| ツール      | バージョン | 用途                                         | インストール確認  |
-|-------------|------------|----------------------------------------------|-------------------|
-| DuckDB      | v1.5+      | ベクトルDB/FTS                               | `duckdb --version` |
+| ツール      | バージョン | 用途                                           | インストール確認    |
+| ----------- | ---------- | ---------------------------------------------- | ------------------- |
+| DuckDB      | v1.5+      | ベクトルDB/FTS                                 | `duckdb --version`  |
 | Lindera CLI | latest     | ユーザー辞書コンパイル(`lindera build --user`) | `lindera --version` |
-| Node.js     | v24+       | 全スクリプト実行基盤                         | `node --version`  |
-| zx          | ^8.x       | スクリプト実行環境                           | `npm install -g zx` |
+| Node.js     | v24+       | 全スクリプト実行基盤                           | `node --version`    |
+| zx          | ^8.x       | スクリプト実行環境                             | `npm install -g zx` |
 
 DuckDBは[DuckDBのサイト](https://duckdb.org)から、Lindera CLIのインストールは[GitHub](https://github.com/lindera/lindera)を参照。
 zxはグローバルインストール必須(`npm install -g zx`)。全スクリプトは `zx` コマンドで実行する。
@@ -171,23 +171,21 @@ knowledge-base/
 対応ファイル形式
 -------------------------
 
-| 形式          | 変換方式                     | 優先度   |
-|---------------|------------------------------|----------|
-| Markdown(.md) | remark MDASTパース           | 完了     |
-| HTML(.html)   | rehype-parse + rehype-remark | 完了     |
-| PDF           | pdfjs-dist legacy            | 将来検討 |
-| Word(.docx)   | mammoth.js                   | 将来検討 |
+| 形式          | 変換方式                     |
+| ------------- | ---------------------------- |
+| Markdown(.md) | remark MDASTパース           |
+| HTML(.html)   | rehype-parse + rehype-remark |
 
 DBテーブル
 -------------------------
 
-| テーブル      | 説明                                                   |
-|---------------|--------------------------------------------------------|
-| `documents`   | ドキュメント全体(全文・見出しtree・ベクトル・PageRank) |
-| `chapters`    | 章単位(本文・擬似要約・分かち書き・ベクトル)           |
-| `doc_links`   | ドキュメント間リンク(PageRank計算用)                   |
-| `sources`     | 外部ソース出典情報(URL・取得日・種別)                  |
-| `pos_master`  | 品詞マスタ(未知語レビュー時の選択肢)                   |
+| テーブル        | 説明                                                   |
+| --------------- | ------------------------------------------------------ |
+| `documents`     | ドキュメント全体(全文・見出しtree・ベクトル・PageRank) |
+| `chapters`      | 章単位(本文・擬似要約・分かち書き・ベクトル)           |
+| `doc_links`     | ドキュメント間リンク(PageRank計算用)                   |
+| `sources`       | 外部ソース出典情報(URL・取得日・種別)                  |
+| `pos_master`    | 品詞マスタ(未知語レビュー時の選択肢)                   |
 | `unknown_words` | 未知語管理(レビュー・ユーザー辞書出力の基盤)           |
 
 今後の検討材料
