@@ -76,6 +76,14 @@ DuckDB (unknown_words / pos_master)
 
 テーブル定義の詳細は[schema.sql](schema.sql)を参照。
 
+### 外部キー制約に関する注意
+
+`sources`テーブルの`document_id`カラムは`documents.id`を参照する設計だが、**DuckDB v1.5.4ではFK制約を設定していない**。
+
+理由: DuckDB v1.5.4には「Over-Eager Constraint Checking in Foreign Keys」という既知の制限があり、`FLOAT[384]`型カラムの`UPDATE`が内部で`DELETE+INSERT`に書き換えられた際にFK違反が発生する。この制限は`documents.embedding`（`FLOAT[384]`）の更新を阻害するため、`sources`テーブルからFK制約を除去し、代わりに`idx_sources_document_id`インデックスでJOIN性能を確保している。
+
+参照整合性はアプリケーションレベル（取り込み・削除時の明示的な関連レコード削除）で担保する。この制限はDuckDBの将来バージョンで解消される可能性がある。
+
 検索スコア設計
 -------------------------
 

@@ -76,6 +76,12 @@ source_local:
 
 - `exclude_patterns`: ディレクトリスキャン時に除外するディレクトリ名。個別の設定がなければこのリストを使用する
 
+### 外部キー制約に関する注意
+
+`docs/architecture.md`の「外部キー制約に関する注意」を参照。
+
+DuckDB v1.5.4の「Over-Eager Constraint Checking in Foreign Keys」制限のため、`sources`テーブルの`document_id`カラムからFK制約を除去している。代わりに`idx_sources_document_id`インデックスで性能を確保。
+
 ### `database`
 
 DuckDBデータベースファイルのパス。

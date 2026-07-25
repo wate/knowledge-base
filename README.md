@@ -79,20 +79,26 @@ zx path/to/search.mjs --hybrid "検索ワード"
 -------------------------
 
 ```bash
+# ローカルファイルのみ処理（Webソースをスキップ）
+zx path/to/knowledge-base.mjs --local-only
+
+# 全件再取り込み（差分更新をスキップ）
+zx path/to/knowledge-base.mjs --full
+
 # 取り込みのみ（embedding生成は後でまとめて）
 zx path/to/knowledge-base.mjs --skip-embed
 
-# embedding全件再生成
-zx path/to/knowledge-base.mjs --force
-
-# Webソースをスキップ
-zx path/to/knowledge-base.mjs --skip-web
+# PageRank更新をスキップ
+zx path/to/knowledge-base.mjs --skip-pagerank
 
 # 各ソース先頭5件のみテスト
 zx path/to/knowledge-base.mjs --limit 5
 
 # 未処理のembeddingだけ生成
 zx path/to/update-embeddings.mjs
+
+# embedding全件再生成
+zx path/to/update-embeddings.mjs --limit 0
 ```
 
 個別コマンドリファレンス
@@ -100,16 +106,15 @@ zx path/to/update-embeddings.mjs
 
 `knowledge-base/` 内の各スクリプトは個別にも実行できます。
 
-| コマンド                                  | 用途                           |
-| ----------------------------------------- | ------------------------------ |
-| `ingest.mjs <file>...`                    | MarkdownファイルをDBに取り込む |
-| `collect.mjs <src>` → `ingest.mjs - <id>` | Web/PDFなどを収集→取り込み     |
-| `update-embeddings.mjs`                   | embedding生成(未処理のみ)      |
-| `update-embeddings.mjs --force`           | embedding全件再生成            |
-| `update-pagerank.mjs <dir>`               | PageRank更新                   |
-| `search.mjs <query>`                      | BM25全文検索                   |
-| `search.mjs --vector <query>`             | ベクトル検索                   |
-| `search.mjs --hybrid <query>`             | ハイブリッド検索               |
+| コマンド                                  | 用途                                              |
+| ----------------------------------------- | ------------------------------------------------- |
+| `ingest.mjs <file>...`                    | MarkdownファイルをDBに取り込む                    |
+| `collect.mjs <src>` → `ingest.mjs - <id>` | Web/PDFなどを収集→取り込み                        |
+| `update-embeddings.mjs`                   | embedding生成(未処理のみ/`--limit 0`で全件再生成) |
+| `update-pagerank.mjs <dir>`               | PageRank更新                                      |
+| `search.mjs <query>`                      | BM25全文検索                                      |
+| `search.mjs --vector <query>`             | ベクトル検索                                      |
+| `search.mjs --hybrid <query>`             | ハイブリッド検索                                  |
 
 ### 注意
 
