@@ -10,131 +10,110 @@ Knowledge Base
 - 多言語ベクトル検索: intfloat/multilingual-e5-smallによる384次元ベクトル検索
 - 日本語全文検索: Lindera形態素解析 + DuckDB FTS(BM25)
 - PageRank: ドキュメント間リンク構造に基づく重要度スコアリング
-- プラグイン方式: `fetch-*.mjs` でソース種別ごとに拡張可能
+- 設定駆動: `.knowledge-base.yml` の `sources` 定義に従い一括処理
 
 必要な外部ツール
 -------------------------
 
-| ツール      | バージョン | 用途                                           | インストール確認    |
-| ----------- | ---------- | ---------------------------------------------- | ------------------- |
-| DuckDB      | v1.5+      | ベクトルDB/FTS                                 | `duckdb --version`  |
-| Lindera CLI | latest     | ユーザー辞書コンパイル(`lindera build --user`) | `lindera --version` |
-| Node.js     | v24+       | 全スクリプト実行基盤                           | `node --version`    |
-| zx          | ^8.x       | スクリプト実行環境                             | `npm install -g zx` |
+| ツール  | バージョン | 用途                 | インストール確認    |
+| ------- | ---------- | -------------------- | ------------------- |
+| DuckDB  | v1.5+      | ベクトルDB/FTS       | `duckdb --version`  |
+| Node.js | v24+       | 全スクリプト実行基盤 | `node --version`    |
+| zx      | ^8.x       | スクリプト実行環境   | `npm install -g zx` |
 
-DuckDBは[DuckDBのサイト](https://duckdb.org)から、Lindera CLIのインストールは[GitHub](https://github.com/lindera/lindera)を参照。
-zxはグローバルインストール必須(`npm install -g zx`)。全スクリプトは `zx` コマンドで実行する。
+DuckDBは[DuckDBのサイト](https://duckdb.org)から、zxはグローバルインストール必須(`npm install -g zx`)。全スクリプトは `zx` コマンドで実行する。
 
 クイックスタート
 -------------------------
 
-**注**: 現時点ではプロトタイプ開発段階のため、スクリプトの一般公開は検討中です。
-
-### 依存関係のインストール
+### 1. 依存関係のインストール
 
 ```bash
-cd knowledge-base
+cd <knowledge-base/ があるディレクトリ>
 npm install
 ```
 
-### スキーマ作成
+### 2. 空のデータベースを作成
 
 ```bash
 duckdb knowledge-base.duckdb < docs/schema.sql
 ```
 
-### ドキュメントの取り込み
+### 3. 設定ファイルを置く
+
+ドキュメントを管理したいディレクトリ(プロジェクトルートなど)に `.knowledge-base.yml` を作成します。
+設定の詳細は[docs/config-reference.md](docs/config-reference.md)を参照。
+
+#### 最低限の設定例
+
+```yaml
+sources:
+  - docs                      # ローカルディレクトリ（再帰スキャン）
+  - https://example.com/docs  # Webソース
+
+database:
+  path: path/to/knowledge-base.duckdb
+```
+
+`database.path` は手順2で作った `.duckdb` ファイルを指すよう設定してください。
+
+### 4. 取り込み＆検索可能にする
+
+設定ファイルのあるディレクトリ(カレントディレクトリ)で以下を実行します。
 
 ```bash
-# Markdownファイル
-zx ingest.mjs docs/index.md
-
-# Webページ（HTML→Markdown変換→取り込み）
-zx collect.mjs https://example.com/page.html | zx ingest.mjs - <doc_id>
-
-# ローカルファイル（自動判別）
-zx collect.mjs document.pdf | zx ingest.mjs - <doc_id>
-
-# ディレクトリ一括収集
-zx collect.mjs ./docs/
+zx path/to/knowledge-base.mjs
 ```
 
-### embedding生成
+これだけで設定ファイルの全ソースを収集・取り込み・ベクトル化し、検索可能な状態になります。
+
+### 5. 検索する
 
 ```bash
-# 未処理レコードのみ
-zx update-embeddings.mjs
-
-# 全件再生成
-zx update-embeddings.mjs --force
+zx path/to/search.mjs "検索ワード"
+zx path/to/search.mjs --vector "検索ワード"
+zx path/to/search.mjs --hybrid "検索ワード"
 ```
 
-### PageRank更新
-
-```bash
-zx update-pagerank.mjs <target_dir>
-```
-
-### 未知語検出とユーザー辞書
-
-Linderaの未知語(UNK)を検出し、レビュー後にユーザー辞書として活用する一連のフロー。
-
-```
-detect-unk.mjs  →  unknown_words(DB)
-                     ↓
-                export-unknown-words.mjs  →  CSV(人間編集)
-                     ↓
-                import-unknown-words.mjs  ←  CSV→DB反映
-                     ↓
-                export-user-dict.mjs      →  CSV(Linderaビルド用)
-                     ↓
-                build-user-dict.mjs       →  ユーザー辞書
-```
-
-### UNK抽出
-
-```bash
-# 全ドキュメントから未知語を抽出
-npm run detect-unk
-
-# 先頭10件のみテスト
-npm run detect-unk -- --limit 10
-```
-
-### レビュー用CSV入出力
-
-```bash
-# unknown_words → CSV（Excel編集用）
-npm run export-unknown-words
-
-# 編集済みCSV → DBに一括反映（wordをキーにUPSERT）
-npm run import-unknown-words
-npm run import-unknown-words -- path/to/edited.csv
-```
-
-### 品詞マスタメンテナンス
-
-```bash
-# pos_master → CSV
-npm run export-pos-master
-
-# 編集済みCSV → DB反映（idありUPSERT、idなし新規INSERT）
-npm run import-pos-master
-```
-
-検索
+便利なオプション
 -------------------------
 
 ```bash
-# BM25全文検索
-zx search.mjs "検索クエリ"
+# 取り込みのみ（embedding生成は後でまとめて）
+zx path/to/knowledge-base.mjs --skip-embed
 
-# ベクトル検索
-zx search.mjs --vector "検索クエリ"
+# embedding全件再生成
+zx path/to/knowledge-base.mjs --force
 
-# ハイブリッド検索
-zx search.mjs --hybrid "検索クエリ"
+# Webソースをスキップ
+zx path/to/knowledge-base.mjs --skip-web
+
+# 各ソース先頭5件のみテスト
+zx path/to/knowledge-base.mjs --limit 5
+
+# 未処理のembeddingだけ生成
+zx path/to/update-embeddings.mjs
 ```
+
+個別コマンドリファレンス
+-------------------------
+
+`knowledge-base/` 内の各スクリプトは個別にも実行できます。
+
+| コマンド                                  | 用途                           |
+| ----------------------------------------- | ------------------------------ |
+| `ingest.mjs <file>...`                    | MarkdownファイルをDBに取り込む |
+| `collect.mjs <src>` → `ingest.mjs - <id>` | Web/PDFなどを収集→取り込み     |
+| `update-embeddings.mjs`                   | embedding生成(未処理のみ)      |
+| `update-embeddings.mjs --force`           | embedding全件再生成            |
+| `update-pagerank.mjs <dir>`               | PageRank更新                   |
+| `search.mjs <query>`                      | BM25全文検索                   |
+| `search.mjs --vector <query>`             | ベクトル検索                   |
+| `search.mjs --hybrid <query>`             | ハイブリッド検索               |
+
+### 注意
+
+`collect.mjs` は単一ソース専用です。ディレクトリの一括処理は `knowledge-base.mjs` を使ってください。
 
 ディレクトリ構成
 -------------------------
@@ -142,51 +121,29 @@ zx search.mjs --hybrid "検索クエリ"
 ```
 knowledge-base/
 ├ package.json            # 依存パッケージ管理
-├ config.yaml             # ナレッジベース全体設定
-├ collect.mjs             # 統合エントリポイント(全ソース対応)
+├ knowledge-base.mjs      # 統合エントリポイント（設定ファイルベース一括処理）
+├ collect.mjs             # 収集＋変換（単一ソース専用）
 ├ ingest.mjs              # 取り込みパイプライン
 ├ search.mjs              # BM25/ベクトル/ハイブリッド検索
-├ detect-unk.mjs          # Linderaで未知語(UNK)抽出
-├ export-unknown-words.mjs # unknown_wordsテーブルCSV出力
-├ import-unknown-words.mjs # 編集済みCSVをunknown_wordsに取り込み
-├ export-pos-master.mjs    # pos_masterテーブルCSV出力
-├ import-pos-master.mjs    # 編集済みCSVをpos_masterに取り込み
-├ export-user-dict.mjs     # ユーザー辞書ビルド用CSV出力
 ├ update-embeddings.mjs   # embedding生成（--force対応）
 ├ update-pagerank.mjs     # PageRank更新(リンク解析内蔵)
+├ detect-unk.mjs          # Linderaで未知語(UNK)抽出
+├ export-unknown-words.mjs  # unknown_wordsテーブルCSV出力
+├ import-unknown-words.mjs  # 編集済みCSVをunknown_wordsに取り込み
+├ export-pos-master.mjs     # pos_masterテーブルCSV出力
+├ import-pos-master.mjs     # 編集済みCSVをpos_masterに取り込み
+├ export-user-dict.mjs      # ユーザー辞書ビルド用CSV出力
 ├ lib/
 │ ├ config.mjs        # 設定読み込み共通モジュール
 │ ├ embed.mjs         # embedding共通モジュール
 │ ├ lindera.mjs       # Linderaバインディング共通モジュール
 │ ├ convert/          # 変換スクリプト(pdf/docx/html)
-│ │ ├ convert-pdf.mjs
-│ │ ├ convert-docx.mjs
-│ │ └ convert-html.mjs
-│ ├ extract/          # 抽出モジュール
-│ │ ├ registry.mjs    # 拡張子マッピング
-│ │ └ pdf.mjs         # PDFテキスト抽出
-│ ├ pipeline/         # 後処理パイプライン
-│ │ ├ pipeline.mjs    # パイプライン実行機構
-│ │ └ normalize-text.mjs # テキスト正規化
-│ └ source/           # source plugin
-│   ├ registry.mjs    # ソース検出
-│   ├ local.mjs       # ローカルファイル収集
-│   └ web.mjs         # Web収集
-├ knowledge-base.duckdb   # DuckDBデータベースファイル
-├ docs/
-│ ├ schema.sql            # DDL（全テーブル）
-│ ├ config-reference.md   # 設定リファレンス
-│ └ ...                   # 設計ドキュメント
-└ dict/                   # Lindera辞書
+│ ├ extract/          # 抽出モジュール(registry/pdf)
+│ ├ pipeline/         # 後処理パイプライン(pipeline/normalize-text)
+│ └ source/           # source plugin(registry/local/web)
+├ docs/               # ドキュメント(schema.sql, config-reference.md等)
+└ dict/               # Lindera辞書
 ```
-
-対応ファイル形式
--------------------------
-
-| 形式          | 変換方式                     |
-| ------------- | ---------------------------- |
-| Markdown(.md) | remark MDASTパース           |
-| HTML(.html)   | rehype-parse + rehype-remark |
 
 DBテーブル
 -------------------------
@@ -199,16 +156,6 @@ DBテーブル
 | `sources`       | 外部ソース出典情報(URL・取得日・種別)                  |
 | `pos_master`    | 品詞マスタ(未知語レビュー時の選択肢)                   |
 | `unknown_words` | 未知語管理(レビュー・ユーザー辞書出力の基盤)           |
-
-今後の検討材料
--------------------------
-
-- PDF対応: `pdfjs-dist` によるテキスト抽出の本格実装
-- Word(.docx)対応: `mammoth.js` による変換処理の本格実装
-- Excel(.xlsx)対応: 表データの取り込み
-- 設定ファイル対応(ノイズフィルタ外部化: Phase 2)
-- 変換後処理パイプライン(Phase 3)
-- Webインターフェース/API: ブラウザ上での管理UIやAPIエンドポイントによる外部連携
 
 ライセンス
 -------------------------

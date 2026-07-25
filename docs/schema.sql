@@ -53,12 +53,18 @@ CREATE TABLE IF NOT EXISTS doc_links (
 CREATE SEQUENCE IF NOT EXISTS sources_id_seq START 1;
 CREATE TABLE IF NOT EXISTS sources (
     id              INTEGER PRIMARY KEY DEFAULT nextval('sources_id_seq'), -- レコードの一意識別子
-    document_id     INTEGER REFERENCES documents(id), -- ドキュメントのID（外部キー制約）
+    document_id     INTEGER,       -- ドキュメントのID（FK制約はDuckDBのOver-Eager制限に抵触するため除外、代わりにidx_sources_document_idでインデックス）
     url             VARCHAR,       -- 取得元のURLまたはURI（file://, smb://等）
     source_type     VARCHAR,       -- ソース種別: 'web', 'project_tool', 'local_file', 'nas' 等
     fetched         TIMESTAMP,     -- 外部情報取得日
     UNIQUE(url, document_id)       -- 同じURLが同じドキュメントに重複登録されるのを防止
 );
+
+-- sources.document_id にインデックス（FK制約除外に伴い、JOIN性能確保のため）
+CREATE INDEX IF NOT EXISTS idx_sources_document_id ON sources(document_id);
+
+-- chapters.document_id にインデックス（頻繁に documents.id とJOINするため）
+CREATE INDEX IF NOT EXISTS idx_chapters_document_id ON chapters(document_id);
 
 -- pos_master: 品詞マスタ（未知語レビュー時のプルダウン選択肢として使用）
 CREATE TABLE IF NOT EXISTS pos_master (

@@ -33,7 +33,7 @@ ingest.mjs                            チャンク分割→DuckDB登録
 DuckDB (documents / chapters / doc_links / sources)
     │
     ├ update-embeddings.mjs  ← intfloat/multilingual-e5-small ベクトル化
-    └ update-pagerank.mjs    ← md-links → graphology PageRank
+    └ update-pagerank.mjs    ← 内部リンク抽出 → graphology PageRank
     │
     ▼
 search.mjs                     ← BM25 / ベクトル / ハイブリッド検索
@@ -132,7 +132,7 @@ ingest.mjs
           update-embeddings.mjs (バッチ書き込み、--force対応)
                │
                ▼
-          update-pagerank.mjs (md-links → doc_links → PageRank)
+          update-pagerank.mjs (内部リンク抽出 → doc_links → PageRank)
 ```
 
 ### 未知語検出 後処理パイプライン
