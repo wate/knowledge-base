@@ -4,14 +4,30 @@
 システム構成
 -------------------------
 
-```
-external sources (Markdown / HTML / PDF / Word)
+````
+external sources (Markdown / HTML / PDF / ...)
+    │
+    ▼  ① データ収集
+collect.mjs                           (source plugin: local/web/...)
+    │
+    ▼  ② テキスト抽出 (lib/extract/)
+extract (pdfjs / 素通し)              バイナリ→プレーンテキスト
+    │
+    ▼  ③ 抽出後処理 (lib/pipeline/)
+[post_extract]                        後処理スクリプト直列実行
+    │
+    ▼  ④ Markdown変換
+convert (unified / 手動構造化)        テキスト→Markdown
+    │
+    ▼  ⑤ 変換後処理 (lib/pipeline/)
+[post_convert]                        後処理スクリプト直列実行
+    │
+    ▼  ⑥ YAMLフロントマター付与
+stdout (フロントマター付きMarkdown)
     │
     ▼
-fetch-*.mjs / convert-*.mjs   ← 変換（+ YAMLフロントマター付与）
-    │
-    ▼ (stdout: Markdown)
-ingest.mjs                     ← remark MDASTパース → チャンク分割 → DuckDB登録
+ingest.mjs                            チャンク分割→DuckDB登録
+```                     ← remark MDASTパース → チャンク分割 → DuckDB登録
     │
     ▼
 DuckDB (documents / chapters / doc_links / sources)
@@ -34,7 +50,7 @@ DuckDB (unknown_words / pos_master)
     ├ import-pos-master.mjs       ← CSV → DB UPSERT
     ├ export-user-dict.mjs        → CSV（Linderaビルド用）
     └ build-user-dict.mjs         → コンパイル済みユーザー辞書
-```
+````
 
 技術スタック
 -------------------------
@@ -95,13 +111,17 @@ DuckDB (unknown_words / pos_master)
 ### 取り込みパイプライン
 
 ```
-fetch-web.mjs <URL>          fetch-local.mjs <file>
-    │                              │
-    │ (HTML→Markdown + YAML)       │ (拡張子自動判別 + YAML)
-    │                              │
-    └──────────┬───────────────────┘
-               ▼ (stdout: フロントマター付きMarkdown)
-          ingest.mjs
+collect.mjs (<file> / <URL> / <dir> / --source <type>)
+    │
+    ├ ① source検出 → plugin.collect() (local / web / ...)
+    ├ ② extract: バイナリ→プレーンテキスト(pdfjs。md/html/txtは素通し)
+    ├ ③ [post_extract]: 抽出後処理パイプライン
+    ├ ④ convert: テキスト→Markdown(unified / 手動構造化 / 素通し)
+    ├ ⑤ [post_convert]: 変換後処理パイプライン
+    └ ⑥ YAMLフロントマター付与
+    │
+    ▼ (stdout: フロントマター付きMarkdown)
+ingest.mjs
                │
                ├ YAMLフロントマター → sourcesテーブル
                ├ remark MDAST → チャンク分割 → chapters
@@ -146,9 +166,10 @@ ingest.mjs (tokenizeWithLindera で --user-dict 参照)
 プラグイン方式
 -------------------------
 
-ソース種別ごとに `fetch-*.mjs` を追加することで拡張可能。
-各スクリプトは以下を守る
+ソース種別ごとに `lib/source/` 以下にpluginを追加することで拡張可能。
+各pluginは以下を守る。
 
-1. stdoutにYAMLフロントマター + Markdownを出力
-2. ログはstderrに出力
-3. 認証方式は内部で完結(ingest.mjsは認証を意識しない)
+1. `export async function collect(sourceSpec, options)` を公開する
+2. 戻り値は `{ content, title, sourceType, sourceMeta, rawFilePath? }` 形式
+3. collect.mjsは収集結果を既存パイプライン(extract→convert→frontmatter)に委譲する
+4. 認証方式はplugin内部で完結する(collect.mjsは認証を意識しない)

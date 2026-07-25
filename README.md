@@ -50,10 +50,13 @@ duckdb knowledge-base.duckdb < docs/schema.sql
 zx ingest.mjs docs/index.md
 
 # Webページ（HTML→Markdown変換→取り込み）
-zx fetch-web.mjs https://example.com/page.html | zx ingest.mjs - <doc_id>
+zx collect.mjs https://example.com/page.html | zx ingest.mjs - <doc_id>
 
 # ローカルファイル（自動判別）
-zx fetch-local.mjs document.pdf | zx ingest.mjs - <doc_id>
+zx collect.mjs document.pdf | zx ingest.mjs - <doc_id>
+
+# ディレクトリ一括収集
+zx collect.mjs ./docs/
 ```
 
 ### embedding生成
@@ -140,26 +143,35 @@ zx search.mjs --hybrid "検索クエリ"
 knowledge-base/
 ├ package.json            # 依存パッケージ管理
 ├ config.yaml             # ナレッジベース全体設定
+├ collect.mjs             # 統合エントリポイント(全ソース対応)
 ├ ingest.mjs              # 取り込みパイプライン
 ├ search.mjs              # BM25/ベクトル/ハイブリッド検索
-├ update-embeddings.mjs   # embedding生成（--force対応）
-├ update-pagerank.mjs     # PageRank更新
-├ convert-html.mjs        # HTML→Markdown変換
-├ convert-pdf.mjs         # PDF→テキスト変換
-├ convert-docx.mjs        # Word→Markdown変換
-├ fetch-web.mjs           # Web取得→変換→フロントマター付与
-├ fetch-local.mjs         # ローカルファイル変換→フロントマター付与
-├ extract-urls.mjs        # MarkdownからURL抽出
 ├ detect-unk.mjs          # Linderaで未知語(UNK)抽出
 ├ export-unknown-words.mjs # unknown_wordsテーブルCSV出力
 ├ import-unknown-words.mjs # 編集済みCSVをunknown_wordsに取り込み
 ├ export-pos-master.mjs    # pos_masterテーブルCSV出力
 ├ import-pos-master.mjs    # 編集済みCSVをpos_masterに取り込み
+├ export-user-dict.mjs     # ユーザー辞書ビルド用CSV出力
+├ update-embeddings.mjs   # embedding生成（--force対応）
+├ update-pagerank.mjs     # PageRank更新(リンク解析内蔵)
 ├ lib/
 │ ├ config.mjs        # 設定読み込み共通モジュール
 │ ├ embed.mjs         # embedding共通モジュール
-│ ├ convert.mjs       # 変換共通（正規化）
-│ └ lindera.mjs       # Linderaバインディング共通モジュール
+│ ├ lindera.mjs       # Linderaバインディング共通モジュール
+│ ├ convert/          # 変換スクリプト(pdf/docx/html)
+│ │ ├ convert-pdf.mjs
+│ │ ├ convert-docx.mjs
+│ │ └ convert-html.mjs
+│ ├ extract/          # 抽出モジュール
+│ │ ├ registry.mjs    # 拡張子マッピング
+│ │ └ pdf.mjs         # PDFテキスト抽出
+│ ├ pipeline/         # 後処理パイプライン
+│ │ ├ pipeline.mjs    # パイプライン実行機構
+│ │ └ normalize-text.mjs # テキスト正規化
+│ └ source/           # source plugin
+│   ├ registry.mjs    # ソース検出
+│   ├ local.mjs       # ローカルファイル収集
+│   └ web.mjs         # Web収集
 ├ knowledge-base.duckdb   # DuckDBデータベースファイル
 ├ docs/
 │ ├ schema.sql            # DDL（全テーブル）

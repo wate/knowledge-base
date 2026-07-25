@@ -7,10 +7,24 @@
 # パスはプロジェクトルートからの相対パスで記述する。
 
 # ----------
-# 解析対象ディレクトリ
+# ソース設定(取得元の一覧)
 # ----------
-source_dirs:
-  - docs
+sources:
+  - docs # ショートハンド: ローカルディレクトリ
+  # - http://example.com/         # ショートハンド: Web URL
+  # - source: http://example.com/
+  #   type: redmine
+  #   auth:
+  #     api_key: xxxxx
+
+# ----------
+# ローカルソース設定(collect.mjsのディレクトリスキャン用)
+# ----------
+source_local:
+  exclude_patterns:
+    - node_modules/**
+    - .git/**
+    - vendor/**
 
 # ----------
 # データベース
@@ -23,10 +37,12 @@ database:
 # Lindera辞書
 # ----------
 dictionary:
-  # 標準辞書ディレクトリ（プロジェクトルートからの相対パス）
-  system_dir: dict/lindera-ipadic
+  # 辞書種別(ipadic / unidic / ko-dic...)
+  type: ipadic
+  # システム辞書ディレクトリ（固定パス。type はこのディレクトリに入れる辞書の種別）
+  system_dir: dict/system
   # ユーザー辞書ファイル（存在しない場合は読み込まない）
-  user_dict: dict/user_dictionary/user-dict.bin
+  user_dict: dict/user/user-dict.bin
 
 # ----------
 # ドキュメント取り込み
@@ -89,13 +105,23 @@ heading_weights:
 # 未知語検出（Phase 2以降で拡張）
 # ----------
 unknown_word_detection:
-  # 解析対象ディレクトリ（未指定時は上位の source_dirs を使用）
+  # 解析対象ディレクトリ（未指定時は sources の local 型エントリを参照）
   source_dirs:
   # ノイズフィルタ（Phase 2 で実装）
   filters:
 
 # ----------
-# 変換後処理パイプライン（Phase 3 で実装）
+# 変換後処理パイプライン（Phase 2 以降で実装）
 # ----------
 pipeline:
-  post_process:
+  # エラー時ポリシー（ステージごとのデフォルト）
+  # abort: 中断、skip: スキップ。未指定時は skip
+  on_error:
+    post_extract: abort
+    post_convert: skip
+  # 抽出後・Markdown変換前の処理（設定スキーマのみ。実装は別タスク）
+  post_extract:
+  # Markdown変換後に実行。上から順に直列処理。
+  # only を指定すると該当ソース種別のみ実行。
+  post_convert:
+    # - script: lib/pipeline/example.mjs

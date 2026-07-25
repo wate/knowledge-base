@@ -20,13 +20,13 @@
 
 ### 環境変数一覧
 
-| 環境変数                         | 対応設定項目             | デフォルト値                                        |
-| -------------------------------- | ------------------------ | --------------------------------------------------- |
-| `KNOWLEDGE_BASE_DB_PATH`         | `database.path`          | `knowledge-base.duckdb`                             |
-| `KNOWLEDGE_BASE_DICT_DIR`        | `dictionary.system_dir`  | `knowledge-base/dict/lindera-ipadic`                |
-| `KNOWLEDGE_BASE_USER_DICT_PATH`  | `dictionary.user_dict`   | `knowledge-base/dict/user_dictionary/user-dict.bin` |
-| `KNOWLEDGE_BASE_EMBEDDING_MODEL` | `embedding.model`        | `intfloat/multilingual-e5-small`                    |
-| `KNOWLEDGE_BASE_TOP_N`           | `search.top_n_documents` | `10`                                                |
+| 環境変数                         | 対応設定項目             | デフォルト値                             |
+| -------------------------------- | ------------------------ | ---------------------------------------- |
+| `KNOWLEDGE_BASE_DB_PATH`         | `database.path`          | `knowledge-base.duckdb`                  |
+| `KNOWLEDGE_BASE_DICT_DIR`        | `dictionary.system_dir`  | `knowledge-base/dict/system`             |
+| `KNOWLEDGE_BASE_USER_DICT_PATH`  | `dictionary.user_dict`   | `knowledge-base/dict/user/user-dict.bin` |
+| `KNOWLEDGE_BASE_EMBEDDING_MODEL` | `embedding.model`        | `intfloat/multilingual-e5-small`         |
+| `KNOWLEDGE_BASE_TOP_N`           | `search.top_n_documents` | `10`                                     |
 
 ### パス解決
 
@@ -36,17 +36,45 @@ npm scriptsを `knowledge-base/` から実行する場合はパスの先頭に `
 設定セクション一覧
 -------------------------
 
-### `source_dirs`
+### `sources`
 
-解析対象ディレクトリの一覧。`ingest` と `unknown_word_detection` で共通のデフォルトとして使用される。
+データ取得元の一覧。collect.mjsがこの設定を読み取り、全ソースを統一的に処理する。
 
 ```yaml
-source_dirs:
-  - docs
+sources:
+  - docs                          # ショートハンド: ローカルディレクトリ
+  - http://example.com/           # ショートハンド: Web URL
+  - source: http://redmine.example.com/
+    type: redmine
+    auth:
+      api_key: "xxxxx"           # typeごとの認証情報
 ```
 
-- CLI引数 `--source-dir` で上書き可能
-- 各機能の設定(例: `unknown_word_detection.source_dirs`)で個別に上書きすることも可能
+#### ショートハンド自動判別ルール
+
+- `http://`/`https://` 始まり → `type: web`(HTTP取得)
+- それ以外 → `type: local`(ファイルパスまたはディレクトリ)
+
+#### 詳細形式のフィールド
+
+- `source`: 実際の取得先(URL orファイルパス)
+- `type`: source plugin名(local/web/Redmine/github...)
+- `auth`: typeごとの認証情報
+- `excludes`: local typeのみ、個別の除外ディレクトリ(グローバルの `source_local.exclude_patterns` を上書き)
+
+### `source_local`
+
+ローカルソースのディレクトリスキャンに関する設定。
+
+```yaml
+source_local:
+  exclude_patterns:
+    - node_modules/**
+    - .git/**
+    - vendor/**
+```
+
+- `exclude_patterns`: ディレクトリスキャン時に除外するディレクトリ名。個別の設定がなければこのリストを使用する
 
 ### `database`
 
@@ -65,11 +93,13 @@ Lindera形態素解析エンジンの辞書設定。
 
 ```yaml
 dictionary:
-  system_dir: dict/lindera-ipadic
-  user_dict: dict/user_dictionary/user-dict.bin
+  type: ipadic
+  system_dir: dict/system
+  user_dict: dict/user/user-dict.bin
 ```
 
-- `system_dir`: 標準辞書ディレクトリ(IPADIC)
+- `type`: 辞書種別(`ipadic`/`unidic`/`ko-dic`...)。`system_dir` に配置する辞書の種類を指定
+- `system_dir`: システム辞書ディレクトリ。固定パスで、`type` の切り替え時は同じディレクトリに上書き配置する
 - `user_dict`: ユーザー辞書ファイル(.bin)。存在しない場合は読み込まれない
 
 辞書が存在しない場合、`lib/lindera.mjs` の `ensureDictionary()` によりGitHub Releasesから自動ダウンロードされる。
@@ -172,29 +202,54 @@ unknown_word_detection:
   filters:
 ```
 
-- `source_dirs`: 解析対象ディレクトリ。未指定時は上位の `source_dirs` を使用
+- `source_dirs`: 解析対象ディレクトリ。未指定時は `sources` のlocal型エントリを参照
 - `filters`: ノイズフィルタ設定(未実装、スケルトン)
 
 ### `pipeline`
 
-変換後処理パイプラインの設定(Phase 3で実装予定)。
+変換後処理パイプラインの設定(Phase 2以降で実装予定)。
 
 ```yaml
 pipeline:
-  post_process:
+  on_error:
+    post_extract: abort
+    post_convert: skip
+  post_extract:
+  post_convert:
 ```
 
-- `post_process`: 各ソース種別の変換後に実行する後処理スクリプトの設定(未実装、スケルトン)
+#### `on_error`
+
+エラー時ポリシー。ステージごとのデフォルト挙動を指定する。
+
+| 値      | 挙動                                                       |
+| ------- | ---------------------------------------------------------- |
+| `abort` | 中断。そのファイルの後続処理を止める                       |
+| `skip`  | スキップ。ログ出力後、加工前の文字列を次のスクリプトへ渡す |
+
+- 未指定のステージは `skip` がデフォルトとなる
+- 各スクリプトに個別の `on_error` を指定すると、ステージデフォルトを上書きできる
+
+#### `post_extract`
+
+抽出後・Markdown変換前の処理(設定スキーマのみ定義。実行機構の実装は別タスク)。
+
+#### `post_convert`
+
+Markdown変換後に実行する後処理スクリプトの設定。上から順に直列実行する。
+
+- 各スクリプトは `process(text, context)` 関数を動的ロードして実行する
+- `only` 条件を指定すると該当ソース種別のみ実行する
 
 CLI引数とconfig.yamlの対応関係
 ------------------------------
 
-| CLI引数             | config.yaml のキー                                  | 影響スクリプト                        |
-| ------------------- | --------------------------------------------------- | ------------------------------------- |
-| `--source-dir`      | `source_dirs`, `unknown_word_detection.source_dirs` | detect-unk.mjs                        |
-| `--limit`           | (CLI専用)                                           | detect-unk.mjs, update-embeddings.mjs |
-| `--force`           | (CLI専用)                                           | update-embeddings.mjs                 |
-| `--vector`          | (CLI専用: 検索モード切替)                           | search.mjs                            |
-| `--hybrid`          | (CLI専用: 検索モード切替)                           | search.mjs                            |
-| `--top`             | `search.top_n_documents`                            | search.mjs                            |
-| `--detailed` / `-D` | (CLI専用: 出力形式切替)                             | export-user-dict.mjs                  |
+| CLI引数             | config.yaml のキー                   | 影響スクリプト                        |
+| ------------------- | ------------------------------------ | ------------------------------------- |
+| `--source-dir`      | `unknown_word_detection.source_dirs` | detect-unk.mjs                        |
+| `--limit`           | (CLI専用)                            | detect-unk.mjs, update-embeddings.mjs |
+| `--force`           | (CLI専用)                            | update-embeddings.mjs                 |
+| `--vector`          | (CLI専用: 検索モード切替)            | search.mjs                            |
+| `--hybrid`          | (CLI専用: 検索モード切替)            | search.mjs                            |
+| `--top`             | `search.top_n_documents`             | search.mjs                            |
+| `--detailed` / `-D` | (CLI専用: 出力形式切替)              | export-user-dict.mjs                  |

@@ -24,7 +24,7 @@ unknown_words (DuckDB)      ← 未知語候補のDB
     └ import-pos-master.mjs ← 編集済みCSV → DB反映
     │
     ├ export-user-dict.mjs  → user-dict.csv (Linderaビルド用)
-    └ npm run build-user-dict → user_dictionary/user-dict.bin
+    └ npm run build-user-dict → user/user-dict.bin
     │
     ▼
 ingest.mjs                   ← 次回取り込みからユーザー辞書が適用される
@@ -121,14 +121,14 @@ npm run build-user-dict
 ```
 
 上記で `export-user-dict` + `lindera build --user` が順次実行され、
-`dict/user_dictionary/user-dict.bin` が生成される。
+`dict/user/user-dict.bin` が生成される。
 
 ### 分かち書きの確認
 
 ```bash
 echo "DuckDBとCakePHPを利用する" | lindera tokenize \
-  --dict dict/lindera-ipadic \
-  --user-dict dict/user_dictionary/user-dict.bin \
+  --dict dict/system \
+  --user-dict dict/user/user-dict.bin \
   -o wakati
 ```
 
@@ -195,4 +195,4 @@ LIMIT 1;
 - `dict/unknown-words.csv` - レビュー用CSV
 - `dict/pos-master.csv` - 品詞マスタCSV
 - `dict/user-dict.csv` - ビルド用CSV
-- `dict/user_dictionary/user-dict.bin` - コンパイル済みユーザー辞書
+- `dict/user/user-dict.bin` - コンパイル済みユーザー辞書
