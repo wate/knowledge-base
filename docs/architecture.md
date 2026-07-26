@@ -55,21 +55,21 @@ DuckDB (unknown_words / pos_master)
 技術スタック
 -------------------------
 
-| 役割               | 採用技術                                          |
-| ------------------ | ------------------------------------------------- |
-| 設定管理           | .knowledge-base.yml + lib/config.mjs (zx/js-yaml) |
-| ベクトル化モデル   | intfloat/multilingual-e5-small (384次元)          |
-| ベクトル化実行基盤 | @huggingface/transformers (Node.js)               |
-| 形態素解析         | lindera-nodejs (NAPI-RS, IPADIC辞書)              |
-| ユーザー辞書ビルド | Lindera CLI (`lindera build --user`)              |
-| ベクトルDB         | DuckDB (FLOAT[384] + list_cosine_similarity)      |
-| FTSエンジン        | DuckDB FTS拡張 (BM25)                             |
-| PageRank           | graphology + graphology-pagerank                  |
-| Markdownパース     | remark + remark-gfm (MDAST)                       |
-| HTML変換           | rehype-parse + rehype-remark                      |
-| PDF変換            | pdfjs-dist legacy build                           |
-| Word変換           | mammoth.js                                        |
-| スクリプト実行基盤 | zx (Node.js)                                      |
+| 役割               | 採用技術                                                          |
+| ------------------ | ----------------------------------------------------------------- |
+| 設定管理           | .knowledge-base.yml + lib/config.mjs (zx/js-yaml)                 |
+| ベクトル化モデル   | intfloat/multilingual-e5-small (384次元)                          |
+| ベクトル化実行基盤 | @huggingface/transformers (Node.js)                               |
+| 形態素解析         | lindera-nodejs (NAPI-RS, IPADIC辞書)                              |
+| ユーザー辞書ビルド | Lindera CLI (`lindera build --user`)                              |
+| ベクトルDB         | DuckDB (FLOAT[384] + list_cosine_similarity) via @duckdb/node-api |
+| FTSエンジン        | DuckDB FTS拡張 (BM25) via @duckdb/node-api                        |
+| PageRank           | graphology + graphology-pagerank                                  |
+| Markdownパース     | remark + remark-gfm (MDAST)                                       |
+| HTML変換           | rehype-parse + rehype-remark                                      |
+| PDF変換            | pdfjs-dist legacy build                                           |
+| Word変換           | mammoth.js                                                        |
+| スクリプト実行基盤 | zx (Node.js)                                                      |
 
 テーブル構成
 -------------------------
@@ -80,9 +80,9 @@ DuckDB (unknown_words / pos_master)
 
 `sources`テーブルの`document_id`カラムは`documents.id`を参照する設計だが、**DuckDB v1.5.4ではFK制約を設定していない**。
 
-理由: DuckDB v1.5.4には「Over-Eager Constraint Checking in Foreign Keys」という既知の制限があり、`FLOAT[384]`型カラムの`UPDATE`が内部で`DELETE+INSERT`に書き換えられた際にFK違反が発生する。この制限は`documents.embedding`（`FLOAT[384]`）の更新を阻害するため、`sources`テーブルからFK制約を除去し、代わりに`idx_sources_document_id`インデックスでJOIN性能を確保している。
+理由: DuckDB v1.5.4には「Over-Eager Constraint Checking in Foreign Keys」という既知の制限があり、`FLOAT[384]`型カラムの`UPDATE`が内部で`DELETE+INSERT`に書き換えられた際にFK違反が発生する。この制限は`documents.embedding`(`FLOAT[384]`)の更新を阻害するため、`sources`テーブルからFK制約を除去し、代わりに`idx_sources_document_id`インデックスでJOIN性能を確保している。
 
-参照整合性はアプリケーションレベル（取り込み・削除時の明示的な関連レコード削除）で担保する。この制限はDuckDBの将来バージョンで解消される可能性がある。
+参照整合性はアプリケーションレベル(`lib/db.mjs` のトランザクションによる `BEGIN/COMMIT/ROLLBACK`)で担保する。この制限はDuckDBの将来バージョンで解消される可能性がある。
 
 検索スコア設計
 -------------------------

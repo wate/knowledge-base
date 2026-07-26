@@ -15,13 +15,13 @@ Knowledge Base
 必要な外部ツール
 -------------------------
 
-| ツール  | バージョン | 用途                 | インストール確認    |
-| ------- | ---------- | -------------------- | ------------------- |
-| DuckDB  | v1.5+      | ベクトルDB/FTS       | `duckdb --version`  |
-| Node.js | v24+       | 全スクリプト実行基盤 | `node --version`    |
-| zx      | ^8.x       | スクリプト実行環境   | `npm install -g zx` |
+| ツール  | バージョン | 用途                 | インストール確認            |
+| ------- | ---------- | -------------------- | --------------------------- |
+| Node.js | v24+       | 全スクリプト実行基盤 | `node --version`            |
+| zx      | ^8.x       | スクリプト実行環境   | `npm install -g zx`         |
+| lindera | ^4.x       | ユーザー辞書ビルド   | `lindera --version`（任意） |
 
-DuckDBは[DuckDBのサイト](https://duckdb.org)から、zxはグローバルインストール必須(`npm install -g zx`)。全スクリプトは `zx` コマンドで実行する。
+zxはグローバルインストール必須(`npm install -g zx`)。DuckDBエンジンは `@duckdb/node-api` が `npm install` 時に自動的に同梱するため、別途インストールは不要。`lindera` CLIはユーザー辞書ビルドにのみ必要で、未知語検出を使わない場合はインストール不要。全スクリプトは `zx` コマンドで実行する。
 
 クイックスタート
 -------------------------
@@ -33,13 +33,7 @@ cd <knowledge-base/ があるディレクトリ>
 npm install
 ```
 
-### 2. 空のデータベースを作成
-
-```bash
-duckdb knowledge-base.duckdb < docs/schema.sql
-```
-
-### 3. 設定ファイルを置く
+### 2. 設定ファイルを置く
 
 ドキュメントを管理したいディレクトリ(プロジェクトルートなど)に `.knowledge-base.yml` を作成します。
 設定の詳細は[docs/config-reference.md](docs/config-reference.md)を参照。
@@ -55,9 +49,9 @@ database:
   path: path/to/knowledge-base.duckdb
 ```
 
-`database.path` は手順2で作った `.duckdb` ファイルを指すよう設定してください。
+データベースファイルが存在しない場合は初回実行時に自動的に作成・初期化される。`database.path` に任意のパスを指定できる。
 
-### 4. 取り込み＆検索可能にする
+### 3. 取り込み＆検索可能にする
 
 設定ファイルのあるディレクトリ(カレントディレクトリ)で以下を実行します。
 
@@ -67,7 +61,7 @@ zx path/to/knowledge-base.mjs
 
 これだけで設定ファイルの全ソースを収集・取り込み・ベクトル化し、検索可能な状態になります。
 
-### 5. 検索する
+### 4. 検索する
 
 ```bash
 zx path/to/search.mjs "検索ワード"

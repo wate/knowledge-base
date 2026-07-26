@@ -13,6 +13,7 @@
     "build-user-dict": "zx export-user-dict.mjs && mkdir -p dict/user_dictionary && lindera build --src dict/user-dict.csv --dest dict/user_dictionary --metadata dict/lindera-ipadic/metadata.json --user"
   },
   "dependencies": {
+    "@duckdb/node-api": "^1.5.5-r.1",
     "@huggingface/transformers": "^4.2.0",
     "graphology": "^0.25.4",
     "graphology-pagerank": "^1.1.0",

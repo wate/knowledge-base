@@ -91,7 +91,7 @@ database:
   path: knowledge-base.duckdb
 ```
 
-- `path`: DBファイルのパス(ワーキングディレクトリからの相対パス、または絶対パス)
+- `path`: DBファイルのパス(ワーキングディレクトリからの相対パス、または絶対パス)。`@duckdb/node-api` に渡すDuckDBデータベースファイルを指定する。ファイルが存在しない場合は初回接続時に自動的に作成される。
 
 ### `dictionary`
 
@@ -142,17 +142,6 @@ embedding:
 - `dimensions`: 出力ベクトルの次元数
 - `batch_size`: バッチサイズ
 - `cache_dir`: モデルキャッシュディレクトリ(ワーキングディレクトリからの相対パス、デフォルト: `tmp/models`)
-
-### `chapter`
-
-章立て設定。
-
-```yaml
-chapter:
-  min_heading_level: 3
-```
-
-- `min_heading_level`: チャプターとして扱う最小見出しレベル
 
 ### `search`
 
@@ -247,10 +236,10 @@ Markdown変換後に実行する後処理スクリプトの設定。上から順
 - 各スクリプトは `process(text, context)` 関数を動的ロードして実行する
 - `only` 条件を指定すると該当ソース種別のみ実行する
 
-CLI引数とconfig.yamlの対応関係
+CLI引数と設定キーの対応関係
 ------------------------------
 
-| CLI引数             | config.yaml のキー                   | 影響スクリプト                        |
+| CLI引数             | .knowledge-base.yml のキー           | 影響スクリプト                        |
 | ------------------- | ------------------------------------ | ------------------------------------- |
 | `--source-dir`      | `unknown_word_detection.source_dirs` | detect-unk.mjs                        |
 | `--limit`           | (CLI専用)                            | detect-unk.mjs, update-embeddings.mjs |
