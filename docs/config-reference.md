@@ -60,7 +60,52 @@ sources:
 - `source`: 実際の取得先(URL orファイルパス)
 - `type`: source plugin名(local/web/Redmine/github...)
 - `auth`: typeごとの認証情報
-- `excludes`: local typeのみ、個別の除外ディレクトリ(グローバルの `source_local.exclude_patterns` を上書き)
+- `excludes`: local typeのみ、個別の除外ディレクトリ名(グローバルの `source_local.exclude_patterns` を上書き)
+- `exclude_patterns`: local typeのみ、個別の除外globパターン。`excludes` がディレクトリ名単位なのに対し、こちらはファイル単位のパターン指定が可能。グローバルの `source_local.exclude_patterns` とマージして評価される
+
+#### ソース単位の除外例
+
+```yaml
+sources:
+  - docs
+  - path: knowledge-base/external/cakephp
+    exclude_patterns:
+      - "**/404.md"
+      - "**/contents.md"
+```
+
+上記の例では `knowledge-base/external/cakephp/` 配下から `404.md` と `contents.md` が除外される。
+
+### `source_mappings`
+
+ローカルファイルと原本URLの対応関係を定義する。
+Gitでクローンした公式ドキュメントのMarkdownを解析元に使いながら、
+検索結果から原本の公式サイトURLを参照できるようになる。
+
+```yaml
+source_mappings:
+  - match: "knowledge-base/external/cakephp/**"
+    url_template: "https://book.cakephp.org/5/en/{{ path }}"
+    replace_ext:
+      .md: .html
+```
+
+#### フィールド
+
+- `match`: プロジェクトルートからの相対パスのglobパターン。これにマッチしたローカルファイルがマッピング対象となる
+- `url_template`: `{{ path }}` に `match` 以降の相対パスが展開される
+- `replace_ext`（省略可）: 拡張子の置換ルール。キー→値のマップで指定
+
+#### 変換例
+
+| ローカルファイル                                      | 生成URL                                               |
+| ----------------------------------------------------- | ----------------------------------------------------- |
+| `knowledge-base/external/cakephp/controllers.md`      | `https://book.cakephp.org/5/en/controllers.html`      |
+| `knowledge-base/external/cakephp/orm/associations.md` | `https://book.cakephp.org/5/en/orm/associations.html` |
+
+`source_mappings` が空（未設定）の場合は従来通り動作し、マッピングは行われない。
+登録されたURLは `sources` テーブルに `source_type = 'ref'` として保存され、
+`search.mjs` の検索結果に `📎` 付きで表示される。
 
 ### `source_local`
 

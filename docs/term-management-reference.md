@@ -39,9 +39,32 @@ name: hecate
 aliases: [Hecate, ヘカテ, 認証認可基盤, ID連携基盤]
 ```
 
-#### 現状の `unknown_words` に別名用のテーブルを追加する案
+#### 対応方針(未決定)
 
-別テーブル方式を推奨する。1つの語に複数の別名を関連づけられるほか、別名の種類(略語/同義語/通称/誤記)も管理できる。
+現時点では2案を検討中。送り仮名のパターン数や略称の最大件数を実際のデータで洗い出してから判断する。
+
+##### 案A: カラム追加方式(シンプル)
+
+`unknown_words` テーブルに繰り返しカラムを追加する。別テーブル不要でJOINも発生しない。
+
+```sql
+-- unknown_words に追加するカラム（案）
+abbrev1      VARCHAR,   -- 略称1
+abbrev2      VARCHAR,   -- 略称2
+abbrev3      VARCHAR,   -- 略称3
+en_singular  VARCHAR,   -- 英語単数形（例: controller）
+en_plural    VARCHAR,   -- 英語複数形（例: controllers）
+okurigana1   VARCHAR,   -- 送り仮名パターン1
+okurigana2   VARCHAR,   -- 送り仮名パターン2
+okurigana3   VARCHAR,   -- 送り仮名パターン3
+okurigana4   VARCHAR,   -- 送り仮名パターン4
+okurigana5   VARCHAR,   -- 送り仮名パターン5
+```
+
+**メリット**: JOIN不要、CSV書き出しが単純、既存運用を変えずに済む
+**デメリット**: カラム数が固定される。最大件数を超えた場合はスキーマ変更が必要
+
+##### 案B: 別テーブル方式(正規化)
 
 ```sql
 CREATE TABLE word_aliases (
@@ -53,8 +76,10 @@ CREATE TABLE word_aliases (
 );
 ```
 
-これにより「hecate」で検索したときに「ヘカテ」「認証認可基盤」でもヒットする、
-あるいはその逆が可能になります。
+**メリット**: 件数制限なし、種別管理ができる
+**デメリット**: JOINが必要、export/importに別テーブル対応が追加で必要
+
+**判断に必要な調査**: 実際の社内文書から略称・送り仮名・英語単複・和製英語の出現パターンを洗い出し、最大件数とバリエーションを確認してから決定する。
 
 ### 2. 表記揺れ正規化モジュール(重点項目)
 
@@ -67,60 +92,58 @@ CREATE TABLE word_aliases (
 
 ##### 優先度: 高(頻出・基本)
 
-- カタカナ長音: コンピュータ/コンピューター、ユーザ/ユーザー → 長音を外した形で統一(固有名詞系は辞書でメンテ)
-- 全角/半角: `Ａ`〜`Ｚ`/`A`〜`Z`、`０`〜`９`/`0`〜`9` → 半角に統一
+- カタカナ長音: コンピュータ / コンピューター、ユーザ / ユーザー → 長音を外した形で統一(固有名詞系は辞書でメンテ)
+- 全角/半角: `Ａ`〜`Ｚ` / `A`〜`Z`、`０`〜`９` / `0`〜`9` → 半角に統一
 
 ##### 優先度: 中
 
-- カタカナの清濁: インターフェース/インターフェイス、デバッグ/デバック → 規則的でないため辞書引きが必要。頻出語だけエントリに持つ
-- 大文字/小文字: `HEC`/`Hec`/`hec` → 固有名詞は正規化すると区別できなくなるため、検索時のみ小文字化でマッチ
-- 数字表記: `第1版`/`第１版`/`第一版` → 半角数字に統一
-- アルファベット+カタカナ: `ID基盤`/`Id基盤`/`アイディー基盤` → 辞書引きで正規形に
-- 約物揺れ: `•`/`・`/`･`、`(株)`/`（株）`、`ー(長音)`/`−(マイナス)` → 特定の約物に統一
+- カタカナの清濁: インターフェース / インターフェイス、デバッグ / デバック → 規則的でないため辞書引きが必要。頻出語だけエントリに持つ
+- 大文字/小文字: `HEC` / `Hec` / `hec` → 固有名詞は正規化すると区別できなくなるため、検索時のみ小文字化でマッチ
+- 数字表記: `第1版` / `第１版` / `第一版` → 半角数字に統一
+- アルファベット+カタカナ: `ID基盤` / `Id基盤` / `アイディー基盤` → 辞書引きで正規形に
+- 約物揺れ: `•` / `・` / `･`、`(株)` / `（株）`、`ー(長音)` / `−(マイナス)` → 特定の約物に統一
 
 ##### 優先度: 低
 
-- 送り仮名: `取込み`/`取り込み`、`書換え`/`書き換え` → 本則(送る)に統一
-- 日付表記: `2024/1/1`/`2024-01-01`/`2024年1月1日` → 内部形式に統一(`2024-01-01`)
-- 漢字/かな混在: `お問い合わせ`/`お問合せ`/`問い合わせ` → 常用形に統一
+- 送り仮名: `取込み` / `取り込み`、`書換え` / `書き換え` → 本則(送る)に統一
+- 日付表記: `2024/1/1` / `2024-01-01` / `2024年1月1日` → 内部形式に統一(`2024-01-01`)
+- 漢字 / かな混在: `お問い合わせ` / `お問合せ` / `問い合わせ` → 常用形に統一
 
 #### 実装方針
 
-各ルールは独立した変換関数として実装し、用途に応じて組み合わせて適用する。
+既存のパイプライン機構(`pipeline.post_convert`)の延長で対応する。
+専用モジュールは新設せず、各ルールを独立したパイプラインスクリプトとして追加する。
 
-##### 変換関数の一覧
+スクリプトは `lib/pipeline/` 配下に配置し、各ルールは `process(text, context)` 関数を `export` するだけでパイプラインに差し込める--この仕組みはすでに `pipeline.mjs` に実装済み。
 
-- `toHalfWidth`: 全角英数字を半角に変換
-- `removeProlongedSound`: カタカナの長音記号を除去(`コンピューター` → `コンピュータ`)
-- `normalizePunctuation`: 約物を統一(中黒を`・`に、マイナス記号を長音に)
-- `toLowerCase`: アルファベットを小文字に統一
-
-##### 用途別の組み合わせ
-
-- 検索クエリ向け(積極的): `toHalfWidth` → `toLowerCase` → `removeProlongedSound` → `normalizePunctuation`
-- エンティティ名の正規形(保守的): `toHalfWidth` → `normalizePunctuation`(大文字/小文字は維持)
-- 未知語判定前(ノイズ除去): `normalizePunctuation`(最低限の字形統一のみ)
-
-#### 既存パイプラインへの組み込み方
-
+```yaml
+# .knowledge-base.yml への追加イメージ
+pipeline:
+  post_convert:
+    - script: lib/pipeline/normalize-text.mjs       # 既存
+    - script: lib/pipeline/normalize-halfwidth.mjs   # 全角→半角（新規）
+    - script: lib/pipeline/normalize-prolonged.mjs   # カタカナ長音統一（新規）
+    - script: lib/pipeline/normalize-punctuation.mjs # 約物統一（新規）
 ```
-[登録時]
-文書 → normalizeCanonical(見出し) → Lindera tokenize → content_wakali（FTS用）
-  ↓
-detect-unk → normalizeToken(未知語候補) → isNoiseToken → DB登録
-                                                      ↓
-                                          表記揺れを含む同一語の重複登録を防止
 
-[検索時]
-クエリ → normalizeSearchQuery → Lindera tokenize → BM25検索
-  ↓
-searchBM25 → 正規化後テキストでマッチ（表記揺れがあってもヒット）
-```
+以下の各ルールも同様にスクリプト化する。
+
+| ルール                 | スクリプト例                | 優先度         |
+| ---------------------- | --------------------------- | -------------- |
+| 全角英数字→半角        | `normalize-halfwidth.mjs`   | 高             |
+| カタカナ長音除去       | `normalize-prolonged.mjs`   | 高             |
+| 約物統一               | `normalize-punctuation.mjs` | 中             |
+| アルファベット小文字化 | `normalize-lowercase.mjs`   | 中(検索時のみ) |
+| 数字表記統一           | `normalize-digits.mjs`      | 中             |
+| 送り仮名統一           | `normalize-okurigana.mjs`   | 低             |
+| 日付表記統一           | `normalize-date.mjs`        | 低             |
+
+検索時の正規化は `search.mjs` 内でクエリに対して同様の変換を適用すれば良い。
 
 #### 注意点
 
 - 正規化しすぎない: 固有名詞(製品名・コードネーム)は大文字小文字を維持。検索時のみ大文字小文字を吸収
-- 辞書引きとの併用: カタカナ清濁(フェース/フェイス)やアルファベット+カタカナ(ID基盤/アイディー基盤)はルールでは対処しきれない。`word_aliases` テーブルで辞書メンテする
+- 辞書引きとの併用: カタカナ清濁(フェース / フェイス)やアルファベット+カタカナ(ID基盤 / アイディー基盤)はルールでは対処しきれない。別名管理(案Aカラム追加/案B別テーブル)で辞書メンテする
 - 長音除去の例外:「コーポレート」「サーバー」など一般語の長音除去は、むしろ検索精度を落とす可能性がある。「社内で使われる形」に合わせてチューニングが必要
 
 既存の `detect-unk.mjs` の `isNoiseToken()` と同様、プラグイン方式でルールを追加できる設計にすると応用が効きます。
@@ -132,7 +155,7 @@ searchBM25 → 正規化後テキストでマッチ（表記揺れがあって�
 
 - lookup: 名前や別名からエンティティ解決
     - 現状: BM25全文検索で対応可能。ベクトル検索なら表記揺れがあってもヒットしやすい
-    - 拡張: unknown_words/word_aliasesをFTS対象にすれば別名検索も可能
+    - 拡張: unknown_words+別名管理(案Aカラム追加/案B別テーブル)をFTS対象にすれば別名検索も可能
     - 重要度: 高(基本機能としてすぐに使える)
 - expand: 関係を辿る
     - 現状: なし。doc_linksは文書間リンクのみでエンティティ間の関係は持たない
@@ -143,33 +166,7 @@ searchBM25 → 正規化後テキストでマッチ（表記揺れがあって�
     - 拡張: エンティティの別名・関係先からキーワード群を動的生成する仕組みが必要
     - 重要度: 低(expandの土台ができてから検討)
 
-### 4. エンティティ間の関係
-
-記事では次の6種類の関係を定義している。
-
-- owned-by(所有)
-- part-of(所属)
-- depends-on(依存)
-- relates-to(関連)
-- used-by(利用)
-- similar-to(類似)
-
-これらを管理するテーブルを追加すれば、関係を辿った検索が可能になります。
-
-```sql
-CREATE TABLE entity_relations (
-    id INTEGER PRIMARY KEY,
-    source_entity_id INTEGER NOT NULL,
-    target_entity_id INTEGER NOT NULL,
-    relation_type TEXT NOT NULL, -- 'owned-by', 'part-of', 'depends-on', ...
-    UNIQUE(source_entity_id, target_entity_id, relation_type)
-);
-```
-
-現状の `doc_links`(文書間リンク → PageRank)とは別に、
-エンティティ間の意味的な関係を管理する層として位置づけられます。
-
-### 5. Wikipediaを種とした用語辞書・別名データの生成
+### 4. Wikipediaを種とした用語辞書・別名データの生成
 
 Wikipediaの膨大な記事コンテンツそのものではなく、**「どのような用語が存在し、どう読むか、どの分野のものか」**というメタ情報だけを抽出し、初期のユーザー辞書と別名リストとして活用する。
 
@@ -182,7 +179,7 @@ Wikipediaの膨大な記事コンテンツそのものではなく、**「どの
 #### Wikipediaから抽出できる情報
 
 - 記事タイトル(表記): ページ一覧 → Linderaユーザー辞書のword
-- リダイレクト(別名→正式名の対応): リダイレクトページ → `word_aliases` テーブル
+- リダイレクト(別名→正式名の対応): リダイレクトページ → 別名管理(案Aカラム追加/案B別テーブル)
 - カテゴリー(分野・ドメイン): カテゴリーリンク → 用語の分野フィルタリング
 - 読み(ふりがな): `{{読み仮名}}` テンプレートまたはタイトルのひらがな → Linderaユーザー辞書のreading
 
@@ -212,7 +209,7 @@ Wikipediaダンプ (jawiki-latest-pages-articles.xml)
           ▼ カテゴリでフィルタした用語だけを抽出
           │
           ├ export-user-dict.mjs 形式のCSV → Linderaユーザー辞書
-          └ 別名リスト → word_aliases テーブル
+          └ 別名リスト → 別名管理（案Aカラム追加/案B別テーブル）
 ```
 
 #### サンプルデータの中身
@@ -263,7 +260,9 @@ WHERE cl_to IN ('医療', '薬学', '医学', '診断', '治療')
     5. ユーザー辞書CSV + 別名CSVの2ファイルを出力
 - 既存の `import-unknown-words.mjs`/`export-user-dict.mjs` に流し込める形式にする
 
-#### 別名テーブルのスキーマ(再掲)
+#### 別名の保存先(未決定)
+
+保存先は上記「対応方針(未決定)」を参照。案A(カラム追加)の場合はCSVのカラムが増えるだけ。案B(別テーブル)の場合は以下のスキーマで管理する。
 
 ```sql
 CREATE TABLE word_aliases (
@@ -276,6 +275,34 @@ CREATE TABLE word_aliases (
 ```
 
 すでにUNK検出で登録された社内固有語と、Wikipedia由来の業界用語を同じテーブルで統一的に扱えるため、lookup(別名解決)の基盤として機能する。
+
+### 5. エンティティ間の関係
+
+記事では次の6種類の関係を定義している。
+
+- owned-by(所有)
+- part-of(所属)
+- depends-on(依存)
+- relates-to(関連)
+- used-by(利用)
+- similar-to(類似)
+
+これらを管理するテーブルを追加すれば、関係を辿った検索が可能になります。
+
+```sql
+CREATE TABLE entity_relations (
+    id INTEGER PRIMARY KEY,
+    source_entity_id INTEGER NOT NULL,
+    target_entity_id INTEGER NOT NULL,
+    relation_type TEXT NOT NULL, -- 'owned-by', 'part-of', 'depends-on', ...
+    UNIQUE(source_entity_id, target_entity_id, relation_type)
+);
+```
+
+現状の `doc_links`(文書間リンク → PageRank)とは別に、
+エンティティ間の意味的な関係を管理する層として位置づけられます。
+
+**優先度**: 低。別名管理の方式決定と語彙登録がある程度進んでから検討する。
 
 ### 6. MCP連携の可能性
 

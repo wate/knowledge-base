@@ -16,6 +16,24 @@ sources:
   #   type: redmine
   #   auth:
   #     api_key: xxxxx
+  # ソース単位の除外パターン指定例
+  - path: knowledge-base/external/cakephp
+    exclude_patterns:
+      - "**/404.md"
+      - "**/contents.md"
+      - "**/epub-contents.md"
+      - "**/pdf-contents.md"
+
+# ----------
+# ローカルファイル↔原本URLマッピング
+# ----------
+# Gitでクローンしたドキュメントと公式URLの対応関係を定義する。
+# 検索結果に原本URL（📎）が表示され、ワンクリックで公式サイトを確認できる。
+source_mappings:
+  - match: "knowledge-base/external/cakephp/**"
+    url_template: "https://book.cakephp.org/5/en/{{ path }}"
+    replace_ext:
+      .md: .html
 
 # ----------
 # ローカルソース設定(collect.mjsのディレクトリスキャン用)

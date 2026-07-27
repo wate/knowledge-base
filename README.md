@@ -15,11 +15,11 @@ Knowledge Base
 必要な外部ツール
 -------------------------
 
-| ツール  | バージョン | 用途                 | インストール確認            |
-| ------- | ---------- | -------------------- | --------------------------- |
-| Node.js | v24+       | 全スクリプト実行基盤 | `node --version`            |
-| zx      | ^8.x       | スクリプト実行環境   | `npm install -g zx`         |
-| lindera | ^4.x       | ユーザー辞書ビルド   | `lindera --version`（任意） |
+| ツール  | バージョン | 用途                 | インストール確認          |
+| ------- | ---------- | -------------------- | ------------------------- |
+| Node.js | v24+       | 全スクリプト実行基盤 | `node --version`          |
+| zx      | ^8.x       | スクリプト実行環境   | `npm install -g zx`       |
+| lindera | ^4.x       | ユーザー辞書ビルド   | `lindera --version`(任意) |
 
 zxはグローバルインストール必須(`npm install -g zx`)。DuckDBエンジンは `@duckdb/node-api` が `npm install` 時に自動的に同梱するため、別途インストールは不要。`lindera` CLIはユーザー辞書ビルドにのみ必要で、未知語検出を使わない場合はインストール不要。全スクリプトは `zx` コマンドで実行する。
 
@@ -38,12 +38,22 @@ npm install
 ドキュメントを管理したいディレクトリ(プロジェクトルートなど)に `.knowledge-base.yml` を作成します。
 設定の詳細は[docs/config-reference.md](docs/config-reference.md)を参照。
 
+`source_mappings` セクションを使うと、Gitでクローンした公式ドキュメントのMarkdownと原本URLの対応関係を定義できる。
+検索結果に原本URL(📎)が表示され、ワンクリックで公式サイトを確認できるようになる(詳細は `source_mappings` セクションを参照)。
+
 #### 最低限の設定例
 
 ```yaml
 sources:
   - docs                      # ローカルディレクトリ（再帰スキャン）
   - https://example.com/docs  # Webソース
+
+# クローンしたドキュメントと原本URLの対応（省略可）
+# source_mappings:
+#   - match: "external/cakephp/**"
+#     url_template: "https://book.cakephp.org/5/en/{{ path }}"
+#     replace_ext:
+#       .md: .html
 
 database:
   path: path/to/knowledge-base.duckdb
