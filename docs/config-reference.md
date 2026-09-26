@@ -154,6 +154,7 @@ dictionary:
 - `user_dict`: ユーザー辞書ファイル(.bin)。存在しない場合は読み込まれない
 
 辞書が存在しない場合、`lib/lindera.mjs` の `ensureDictionary()` によりGitHub Releasesから自動ダウンロードされる。
+ダウンロードするアーカイブは`type`から決定される(例: `ipadic-neologd` → `lindera-ipadic-neologd-<version>.zip`)。
 
 ### `ingest`
 

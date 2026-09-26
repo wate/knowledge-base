@@ -10,14 +10,14 @@
     "import-pos-master": "zx import-pos-master.mjs",
     "export-user-dict": "zx export-user-dict.mjs",
     "export-user-dict-detailed": "zx export-user-dict.mjs --detailed",
-    "build-user-dict": "zx export-user-dict.mjs && mkdir -p dict/user_dictionary && lindera build --src dict/user-dict.csv --dest dict/user_dictionary --metadata dict/lindera-ipadic/metadata.json --user"
+    "build-user-dict": "zx export-user-dict.mjs && mkdir -p dict/user && lindera build --src dict/user-dict.csv --dest dict/user --metadata dict/system/metadata.json --user"
   },
   "dependencies": {
     "@duckdb/node-api": "^1.5.5-r.1",
     "@huggingface/transformers": "^4.2.0",
     "graphology": "^0.25.4",
     "graphology-pagerank": "^1.1.0",
-    "lindera-nodejs": "^4.0.1",
+    "lindera": "^6.2.0",
     "mammoth": "^1.12.0",
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^6.1.200",
