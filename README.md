@@ -75,9 +75,9 @@ zx path/to/knowledge-base.mjs
 ### 4. 検索する
 
 ```bash
-zx path/to/search.mjs "検索ワード"
-zx path/to/search.mjs --vector "検索ワード"
-zx path/to/search.mjs --hybrid "検索ワード"
+zx path/to/knowledge-base.mjs search "検索ワード"
+zx path/to/knowledge-base.mjs search --vector "検索ワード"
+zx path/to/knowledge-base.mjs search --hybrid "検索ワード"
 ```
 
 便利なオプション
@@ -100,30 +100,30 @@ zx path/to/knowledge-base.mjs --skip-pagerank
 zx path/to/knowledge-base.mjs --limit 5
 
 # 未処理のembeddingだけ生成
-zx path/to/update-embeddings.mjs
+zx path/to/knowledge-base.mjs update-embeddings
 
 # embedding全件再生成
-zx path/to/update-embeddings.mjs --limit 0
+zx path/to/knowledge-base.mjs update-embeddings --limit 0
 ```
 
 個別コマンドリファレンス
 -------------------------
 
-`knowledge-base/` 内の各スクリプトは個別にも実行できます。
+すべて `knowledge-base.mjs` のサブコマンドとして実行します(`--help`で一覧を表示できます)。
 
-| コマンド                                  | 用途                                              |
-| ----------------------------------------- | ------------------------------------------------- |
-| `ingest.mjs <file>...`                    | MarkdownファイルをDBに取り込む                    |
-| `collect.mjs <src>` → `ingest.mjs - <id>` | Web/PDFなどを収集→取り込み                        |
-| `update-embeddings.mjs`                   | embedding生成(未処理のみ/`--limit 0`で全件再生成) |
-| `update-pagerank.mjs <dir>`               | PageRank更新                                      |
-| `search.mjs <query>`                      | BM25全文検索                                      |
-| `search.mjs --vector <query>`             | ベクトル検索                                      |
-| `search.mjs --hybrid <query>`             | ハイブリッド検索                                  |
+| コマンド                                     | 用途                                              |
+| -------------------------------------------- | ------------------------------------------------- |
+| `knowledge-base.mjs sync [<src>]`            | 収集・取り込み・索引更新(差分更新)                |
+| `knowledge-base.mjs update-embeddings`       | embedding生成(未処理のみ/`--limit 0`で全件再生成) |
+| `knowledge-base.mjs update-pagerank [<dir>]` | PageRank更新                                      |
+| `knowledge-base.mjs search <query>`          | BM25全文検索                                      |
+| `knowledge-base.mjs search --vector <query>` | ベクトル検索                                      |
+| `knowledge-base.mjs search --hybrid <query>` | ハイブリッド検索                                  |
+| `knowledge-base.mjs dict <操作>`             | 辞書メンテナンス(未知語検出・CSV入出力)           |
 
 ### 注意
 
-`collect.mjs` は単一ソース専用です。ディレクトリの一括処理は `knowledge-base.mjs` を使ってください。
+取り込みは `sync` に統合されています。単一ソースは `sync <src>`、変換結果の確認は `sync --dry-run` を使ってください。
 
 ディレクトリ構成
 -------------------------
@@ -131,19 +131,17 @@ zx path/to/update-embeddings.mjs --limit 0
 ```
 knowledge-base/
 ├ package.json            # 依存パッケージ管理
-├ knowledge-base.mjs      # 統合エントリポイント（設定ファイルベース一括処理）
-├ collect.mjs             # 収集＋変換（単一ソース専用）
-├ ingest.mjs              # 取り込みパイプライン
-├ search.mjs              # BM25/ベクトル/ハイブリッド検索
-├ update-embeddings.mjs   # embedding生成（--force対応）
-├ update-pagerank.mjs     # PageRank更新(リンク解析内蔵)
-├ detect-unk.mjs          # Linderaで未知語(UNK)抽出
-├ export-unknown-words.mjs  # unknown_wordsテーブルCSV出力
-├ import-unknown-words.mjs  # 編集済みCSVをunknown_wordsに取り込み
-├ export-pos-master.mjs     # pos_masterテーブルCSV出力
-├ import-pos-master.mjs     # 編集済みCSVをpos_masterに取り込み
-├ export-user-dict.mjs      # ユーザー辞書ビルド用CSV出力
+├ knowledge-base.mjs      # 唯一のエントリポイント(サブコマンド方式)
 ├ lib/
+│ ├ collect.mjs       # 収集＋変換(単一ソース)
+│ ├ ingest.mjs        # 取り込み(チャプター分割・FTS再構築)
+│ ├ sync.mjs          # 取り込み経路の統合(差分更新・索引更新)
+│ ├ search.mjs        # BM25/ベクトル/ハイブリッド検索
+│ ├ update-embeddings.mjs  # embedding生成
+│ ├ update-pagerank.mjs    # PageRank更新(リンク解析内蔵)
+│ ├ lock.mjs          # 排他制御(O_EXCLロック)
+│ ├ errors.mjs        # 共通エラー型
+│ ├ dict/             # 辞書メンテナンス(未知語検出・CSV入出力)
 │ ├ config.mjs        # 設定読み込み共通モジュール
 │ ├ embed.mjs         # embedding共通モジュール
 │ ├ lindera.mjs       # Linderaバインディング共通モジュール

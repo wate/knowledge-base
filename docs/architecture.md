@@ -8,7 +8,7 @@
 external sources (Markdown / HTML / PDF / ...)
     │
     ▼  ① データ収集
-collect.mjs                           (source plugin: local/web/...)
+lib/collect                           (source plugin: local/web/...)
     │
     ▼  ② テキスト抽出 (lib/extract/)
 extract (pdfjs / 素通し)              バイナリ→プレーンテキスト
@@ -26,31 +26,34 @@ convert (unified / 手動構造化)        テキスト→Markdown
 stdout (フロントマター付きMarkdown)
     │
     ▼
-ingest.mjs                            チャンク分割→DuckDB登録
+lib/ingest                            チャンク分割→DuckDB登録
 ```                     ← remark MDASTパース → チャンク分割 → DuckDB登録
     │
     ▼
 DuckDB (documents / chapters / doc_links / sources)
     │
-    ├ update-embeddings.mjs  ← intfloat/multilingual-e5-small ベクトル化
-    └ update-pagerank.mjs    ← 内部リンク抽出 → graphology PageRank
+    ├ lib/update-embeddings  ← intfloat/multilingual-e5-small ベクトル化
+    └ lib/update-pagerank    ← 内部リンク抽出 → graphology PageRank
     │
     ▼
-search.mjs                     ← BM25 / ベクトル / ハイブリッド検索
+lib/search                     ← BM25 / ベクトル / ハイブリッド検索
 
 --- 未知語検出 後処理パイプライン ---
 
 DuckDB (unknown_words / pos_master)
     │
-    ▲ detect-unk.mjs              ← Lindera Tokenizer ← chapters.content
+    ▲ detect                      ← Lindera Tokenizer ← chapters.content
     │
-    ├ export-unknown-words.mjs    → CSV（人間編集用）
-    ├ import-unknown-words.mjs    ← CSV（編集済み）→ DB UPSERT
-    ├ export-pos-master.mjs       → CSV（品詞マスタ編集用）
-    ├ import-pos-master.mjs       ← CSV → DB UPSERT
-    ├ export-user-dict.mjs        → CSV（Linderaビルド用）
-    └ build-user-dict.mjs         → コンパイル済みユーザー辞書
+    ├ export-unknown-words        → CSV（人間編集用）
+    ├ import-unknown-words        ← CSV（編集済み）→ DB UPSERT
+    ├ export-pos-master          → CSV（品詞マスタ編集用）
+    ├ import-pos-master          ← CSV → DB UPSERT
+    ├ export-user-dict             → CSV（Linderaビルド用）
+    └ build-user-dict             → コンパイル済みユーザー辞書
 ````
+
+実行の入口は単一の`knowledge-base.mjs`で、サブコマンド(`sync`・`search`・`update-embeddings`・`update-pagerank`・`dict <操作>`)として呼び出す。
+図中の`lib/`はモジュール名、dict系の操作名(`detect`・`export-unknown-words`など)は`dict`サブコマンドの操作を示す。
 
 技術スタック
 -------------------------
@@ -116,10 +119,12 @@ DuckDB (unknown_words / pos_master)
 データフロー
 -------------------------
 
+図中のラベルは`lib/`配下のモジュール名、および`dict`サブコマンドの操作名を示す。
+
 ### 取り込みパイプライン
 
 ```
-collect.mjs (<file> / <URL> / <dir> / --source <type>)
+lib/collect (<file> / <URL> / <dir> / --source <type>)
     │
     ├ ① source検出 → plugin.collect() (local / web / ...)
     ├ ② extract: バイナリ→プレーンテキスト(pdfjs。md/html/txtは素通し)
@@ -129,7 +134,7 @@ collect.mjs (<file> / <URL> / <dir> / --source <type>)
     └ ⑥ YAMLフロントマター付与
     │
     ▼ (stdout: フロントマター付きMarkdown)
-ingest.mjs
+lib/ingest
                │
                ├ YAMLフロントマター → sourcesテーブル
                ├ remark MDAST → チャンク分割 → chapters
@@ -137,10 +142,10 @@ ingest.mjs
                └ PRAGMA create_fts_index (FTS自動生成)
                │
                ▼
-          update-embeddings.mjs (バッチ書き込み、--force対応)
+          lib/update-embeddings (バッチ書き込み、--force対応)
                │
                ▼
-          update-pagerank.mjs (内部リンク抽出 → doc_links → PageRank)
+          lib/update-pagerank (内部リンク抽出 → doc_links → PageRank)
 ```
 
 ### 未知語検出 後処理パイプライン
@@ -151,24 +156,24 @@ ingest.mjs
 chapters.content
     │
     ▼
-detect-unk.mjs               ← Lindera Tokenizer + UNK_FILTERS
+detect                       ← Lindera Tokenizer + UNK_FILTERS
     │
     ▼
 unknown_words (DuckDB)
     │
-    ├ export-unknown-words.mjs  →  unknown-words.csv (全カラム、ヘッダーあり)
+    ├ export-unknown-words      →  unknown-words.csv (全カラム、ヘッダーあり)
     │                               ↓ 人間がExcel編集
-    └ import-unknown-words.mjs  ←  unknown-words.csv (編集済み) → UPSERT
+    └ import-unknown-words      ←  unknown-words.csv (編集済み) → UPSERT
     │
-    ├ export-pos-master.mjs     →  pos-master.csv
+    ├ export-pos-master        →  pos-master.csv
     │                               ↓ 人間が編集
-    └ import-pos-master.mjs     ←  pos-master.csv → UPSERT
+    └ import-pos-master        ←  pos-master.csv → UPSERT
     │
-    ├ export-user-dict.mjs      →  user-dict.csv (Simple/Detailed形式)
-    └ build-user-dict.mjs       →  lindera build --user → ユーザー辞書
+    ├ export-user-dict           →  user-dict.csv (Simple/Detailed形式)
+    └ build-user-dict           →  lindera build --user → ユーザー辞書
     │
     ▼
-ingest.mjs (tokenizeWithLindera で --user-dict 参照)
+lib/ingest (tokenizeWithLindera で --user-dict 参照)
 ```
 
 プラグイン方式
@@ -179,5 +184,5 @@ ingest.mjs (tokenizeWithLindera で --user-dict 参照)
 
 1. `export async function collect(sourceSpec, options)` を公開する
 2. 戻り値は `{ content, title, sourceType, sourceMeta, rawFilePath? }` 形式
-3. collect.mjsは収集結果を既存パイプライン(extract→convert→frontmatter)に委譲する
-4. 認証方式はplugin内部で完結する(collect.mjsは認証を意識しない)
+3. `lib/collect.mjs`は収集結果を既存パイプライン(extract→convert→frontmatter)に委譲する
+4. 認証方式はplugin内部で完結する(`lib/collect.mjs`は認証を意識しない)

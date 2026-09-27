@@ -3,14 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "detect-unk": "zx detect-unk.mjs",
-    "export-unknown-words": "zx export-unknown-words.mjs",
-    "import-unknown-words": "zx import-unknown-words.mjs",
-    "export-pos-master": "zx export-pos-master.mjs",
-    "import-pos-master": "zx import-pos-master.mjs",
-    "export-user-dict": "zx export-user-dict.mjs",
-    "export-user-dict-detailed": "zx export-user-dict.mjs --detailed",
-    "build-user-dict": "zx export-user-dict.mjs && mkdir -p dict/user && lindera build --src dict/user-dict.csv --dest dict/user --metadata dict/system/metadata.json --user"
+    "test": "zx tests/run.mjs",
+    "detect-unk": "zx knowledge-base.mjs dict detect",
+    "export-unknown-words": "zx knowledge-base.mjs dict export-unknown-words",
+    "import-unknown-words": "zx knowledge-base.mjs dict import-unknown-words",
+    "export-pos-master": "zx knowledge-base.mjs dict export-pos-master",
+    "import-pos-master": "zx knowledge-base.mjs dict import-pos-master",
+    "export-user-dict": "zx knowledge-base.mjs dict export-user-dict",
+    "export-user-dict-detailed": "zx knowledge-base.mjs dict export-user-dict --detailed",
+    "build-user-dict": "zx knowledge-base.mjs dict export-user-dict && mkdir -p dict/user && lindera build --src dict/user-dict.csv --dest dict/user --metadata dict/system/metadata.json --user"
   },
   "dependencies": {
     "@duckdb/node-api": "^1.5.5-r.1",

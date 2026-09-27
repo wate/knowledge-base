@@ -38,7 +38,7 @@ npm scriptsを `knowledge-base/` から実行する場合はパスの先頭に `
 
 ### `sources`
 
-データ取得元の一覧。collect.mjsがこの設定を読み取り、全ソースを統一的に処理する。
+データ取得元の一覧。`sync`がこの設定を読み取り、全ソースを統一的に処理する。
 
 ```yaml
 sources:
@@ -61,7 +61,9 @@ sources:
 - `type`: source plugin名(local/web/Redmine/github...)
 - `auth`: typeごとの認証情報
 - `excludes`: local typeのみ、個別の除外ディレクトリ名(グローバルの `source_local.exclude_patterns` を上書き)
-- `exclude_patterns`: local typeのみ、個別の除外globパターン。`excludes` がディレクトリ名単位なのに対し、こちらはファイル単位のパターン指定が可能。グローバルの `source_local.exclude_patterns` とマージして評価される
+- `exclude_patterns`: local typeのみ、個別の除外globパターン
+    - `excludes` がディレクトリ名単位なのに対し、こちらはファイル単位のパターン指定が可能
+    - グローバルの `source_local.exclude_patterns` とマージして評価される
 
 #### ソース単位の除外例
 
@@ -105,7 +107,7 @@ source_mappings:
 
 `source_mappings` が空（未設定）の場合は従来通り動作し、マッピングは行われない。
 登録されたURLは `sources` テーブルに `source_type = 'ref'` として保存され、
-`search.mjs` の検索結果に `📎` 付きで表示される。
+`search` の検索結果に `📎` 付きで表示される。
 
 ### `source_local`
 
@@ -285,12 +287,12 @@ Markdown変換後に実行する後処理スクリプトの設定。上から順
 CLI引数と設定キーの対応関係
 ------------------------------
 
-| CLI引数             | .knowledge-base.yml のキー           | 影響スクリプト                        |
+| CLI引数             | .knowledge-base.yml のキー           | 影響サブコマンド                      |
 | ------------------- | ------------------------------------ | ------------------------------------- |
-| `--source-dir`      | `unknown_word_detection.source_dirs` | detect-unk.mjs                        |
-| `--limit`           | (CLI専用)                            | detect-unk.mjs, update-embeddings.mjs |
-| `--force`           | (CLI専用)                            | update-embeddings.mjs                 |
-| `--vector`          | (CLI専用: 検索モード切替)            | search.mjs                            |
-| `--hybrid`          | (CLI専用: 検索モード切替)            | search.mjs                            |
-| `--top`             | `search.top_n_documents`             | search.mjs                            |
-| `--detailed` / `-D` | (CLI専用: 出力形式切替)              | export-user-dict.mjs                  |
+| `--source-dir`      | `unknown_word_detection.source_dirs` | `dict detect`                         |
+| `--limit`           | (CLI専用)                            | `dict detect`, `update-embeddings`    |
+| `--force`           | (CLI専用)                            | `update-embeddings`                   |
+| `--vector`          | (CLI専用: 検索モード切替)            | `search`                              |
+| `--hybrid`          | (CLI専用: 検索モード切替)            | `search`                              |
+| `--top`             | `search.top_n_documents`             | `search`                              |
+| `--detailed` / `-D` | (CLI専用: 出力形式切替)              | `dict export-user-dict`               |

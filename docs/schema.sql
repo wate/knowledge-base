@@ -6,7 +6,7 @@
 --
 -- 使い方:
 --   初回セットアップ: duckdb knowledge-base.duckdb < docs/schema.sql
---   FTSインデックスは ingest.mjs の取り込み完了後に自動生成される
+--   FTSインデックスは sync の取り込み完了後に自動生成される
 
 INSTALL fts;
 LOAD fts;

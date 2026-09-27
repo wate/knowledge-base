@@ -10,24 +10,24 @@ Linderaの標準辞書(ipadic)ではプロジェクト固有の用語(製品名�
 -------------------------
 
 ```
-detect-unk.mjs              ← 対象ディレクトリの.mdファイルをスキャン
+dict detect                 ← 対象ディレクトリの.mdファイルをスキャン
     │
     ▼
 unknown_words (DuckDB)      ← 未知語候補のDB
     │
-    ├ export-unknown-words.mjs → unknown-words.csv (編集用)
+    ├ dict export-unknown-words → unknown-words.csv (編集用)
     │                            ↓ 人間がExcel等で編集
-    └ import-unknown-words.mjs ← 編集済みCSV → DB反映
+    └ dict import-unknown-words ← 編集済みCSV → DB反映
     │
-    ├ export-pos-master.mjs → pos-master.csv
+    ├ dict export-pos-master → pos-master.csv
     │                            ↓ 人間が編集
-    └ import-pos-master.mjs ← 編集済みCSV → DB反映
+    └ dict import-pos-master ← 編集済みCSV → DB反映
     │
-    ├ export-user-dict.mjs  → user-dict.csv (Linderaビルド用)
+    ├ dict export-user-dict  → user-dict.csv (Linderaビルド用)
     └ npm run build-user-dict → user/user-dict.bin
     │
     ▼
-ingest.mjs                   ← 次回取り込みからユーザー辞書が適用される
+sync                         ← 次回取り込みからユーザー辞書が適用される
 ```
 
 1. 未知語の検出
@@ -49,7 +49,7 @@ npm run detect-unk -- --source-dir ../docs
 
 ### ノイズフィルタの調整
 
-`detect-unk.mjs` 先頭の3つのフィルタ配列で除外パターンを調整できる。
+`dict detect`(実装は `lib/dict/detect.mjs`)先頭の3つのフィルタ配列で除外パターンを調整できる。
 
 | フィルタ               | 対象         | デフォルトのパターン                 |
 | ---------------------- | ------------ | ------------------------------------ |
@@ -174,7 +174,7 @@ SELECT * FROM pos_master ORDER BY id;
 
 ---
 
-ユーザー辞書が `ingest.mjs` の分かち書きに反映されているかは、取り込み後の `chapters.content_wakati` で確認できる。
+ユーザー辞書が `sync` の分かち書きに反映されているかは、取り込み後の `chapters.content_wakati` で確認できる。
 
 ```sql
 SELECT content_wakati
@@ -186,12 +186,15 @@ LIMIT 1;
 関連ファイル
 -------------------------
 
-- `detect-unk.mjs` - 未知語検出スクリプト
-- `export-unknown-words.mjs` - レビュー用CSV出力
-- `import-unknown-words.mjs` - レビュー用CSV取り込み
-- `export-pos-master.mjs` - 品詞マスタCSV出力
-- `import-pos-master.mjs` - 品詞マスタCSV取り込み
-- `export-user-dict.mjs` - ユーザー辞書ビルド用CSV出力
+- `dict detect` - 未知語検出
+- `dict export-unknown-words` - レビュー用CSV出力
+- `dict import-unknown-words` - レビュー用CSV取り込み
+- `dict export-pos-master` - 品詞マスタCSV出力
+- `dict import-pos-master` - 品詞マスタCSV取り込み
+- `dict export-user-dict` - ユーザー辞書ビルド用CSV出力
+
+いずれも `knowledge-base.mjs` のサブコマンドとして実行する。
+
 - `dict/unknown-words.csv` - レビュー用CSV
 - `dict/pos-master.csv` - 品詞マスタCSV
 - `dict/user-dict.csv` - ビルド用CSV

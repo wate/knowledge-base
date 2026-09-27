@@ -36,7 +36,7 @@ source_mappings:
       .md: .html
 
 # ----------
-# ローカルソース設定(collect.mjsのディレクトリスキャン用)
+# ローカルソース設定(syncのディレクトリスキャン用)
 # ----------
 source_local:
   exclude_patterns:
