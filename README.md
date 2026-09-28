@@ -12,6 +12,8 @@ Knowledge Base
 - PageRank: ドキュメント間リンク構造に基づく重要度スコアリング
 - 設定駆動: `.knowledge-base.yml` の `sources` 定義に従い一括処理
 
+検索モードとスコアの決まり方は[docs/search.md](docs/search.md)を参照。
+
 必要な外部ツール
 -------------------------
 
@@ -111,15 +113,15 @@ zx path/to/knowledge-base.mjs update-embeddings --limit 0
 
 すべて `knowledge-base.mjs` のサブコマンドとして実行します(`--help`で一覧を表示できます)。
 
-| コマンド                                     | 用途                                              |
-| -------------------------------------------- | ------------------------------------------------- |
-| `knowledge-base.mjs sync [<src>]`            | 収集・取り込み・索引更新(差分更新)                |
-| `knowledge-base.mjs update-embeddings`       | embedding生成(未処理のみ/`--limit 0`で全件再生成) |
+| コマンド                                | 用途                                              |
+| --------------------------------------- | ------------------------------------------------- |
+| `knowledge-base.mjs sync [<src>]`       | 収集・取り込み・索引更新(差分更新)                |
+| `knowledge-base.mjs update-embeddings`  | embedding生成(未処理のみ/`--limit 0`で全件再生成) |
 | `knowledge-base.mjs update-pagerank [<dir>]` | PageRank更新                                      |
-| `knowledge-base.mjs search <query>`          | BM25全文検索                                      |
+| `knowledge-base.mjs search <query>`     | BM25全文検索                                      |
 | `knowledge-base.mjs search --vector <query>` | ベクトル検索                                      |
 | `knowledge-base.mjs search --hybrid <query>` | ハイブリッド検索                                  |
-| `knowledge-base.mjs dict <操作>`             | 辞書メンテナンス(未知語検出・CSV入出力)           |
+| `knowledge-base.mjs dict <操作>`        | 辞書メンテナンス(未知語検出・CSV入出力)           |
 
 ### 注意
 
@@ -145,9 +147,8 @@ knowledge-base/
 │ ├ config.mjs        # 設定読み込み共通モジュール
 │ ├ embed.mjs         # embedding共通モジュール
 │ ├ lindera.mjs       # Linderaバインディング共通モジュール
-│ ├ convert/          # 変換スクリプト(pdf/docx/html)
-│ ├ extract/          # 抽出モジュール(registry/pdf)
-│ ├ pipeline/         # 後処理パイプライン(pipeline/normalize-text)
+│ ├ extract/          # 変換モジュール(anydoc/registry)
+│ ├ normalize.mjs     # 取り込み時の正規化(MDASTのtextノード)
 │ └ source/           # source plugin(registry/local/web)
 ├ docs/               # ドキュメント(schema.sql, config-reference.md等)
 └ dict/               # Lindera辞書

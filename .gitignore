@@ -4,6 +4,10 @@ knowledge-base.db.*
 knowledge-base.duckdb
 knowledge-base.duckdb.*
 
+# Local config for running from this directory (copy of the project root config, adjusted paths)
+.knowledge-base.yml
+.knowledge-base.yaml
+
 # Node.js
 node_modules/
 package-lock.json

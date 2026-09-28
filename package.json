@@ -11,17 +11,15 @@
     "import-pos-master": "zx knowledge-base.mjs dict import-pos-master",
     "export-user-dict": "zx knowledge-base.mjs dict export-user-dict",
     "export-user-dict-detailed": "zx knowledge-base.mjs dict export-user-dict --detailed",
-    "build-user-dict": "zx knowledge-base.mjs dict export-user-dict && mkdir -p dict/user && lindera build --src dict/user-dict.csv --dest dict/user --metadata dict/system/metadata.json --user"
+    "build-user-dict": "zx knowledge-base.mjs update-dict"
   },
   "dependencies": {
     "@duckdb/node-api": "^1.5.5-r.1",
+    "@firecrawl/anydoc": "0.2.4",
     "@huggingface/transformers": "^4.2.0",
     "graphology": "^0.25.4",
     "graphology-pagerank": "^1.1.0",
     "lindera": "^6.2.0",
-    "mammoth": "^1.12.0",
-    "pdf-parse": "^2.4.5",
-    "pdfjs-dist": "^6.1.200",
     "picomatch": "^4.0.5",
     "rehype-parse": "^9.0.1",
     "rehype-remark": "^10.0.1",

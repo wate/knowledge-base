@@ -66,13 +66,8 @@ dictionary:
 # ドキュメント取り込み
 # ----------
 ingest:
-  # チャプター分割の最小見出しレベル
+  # チャプター分割に使う最も深い見出しレベル(h4以降は親章へ含める)
   min_heading_level: 3
-  # 除外ディレクトリ/ファイルのパターン（glob）
-  exclude_patterns:
-    - node_modules/**
-    - .git/**
-    - vendor/**
 
 # ----------
 # ベクトル化設定
@@ -84,22 +79,16 @@ embedding:
   cache_dir: tmp/models
 
 # ----------
-# 章立て設定
-# ----------
-chapter:
-  min_heading_level: 3
-
-# ----------
 # 検索スコア係数（合計が1.0になるように設定）
 # ----------
 search:
-  # 2段階検索の第1段階で取得する上位N件
-  top_n_documents: 10
+  # 2段階検索の第1段階で絞り込む文書数(--topの件数とは独立)
+  top_n_documents: 20
 
-  # ベクトル検索スコアの内訳
+  # ベクトル検索スコアの内訳(cosineとpagerankは検索候補内でmin-max正規化してから重み付けする)
   weights:
-    cosine: 0.5
-    pagerank: 0.2
+    cosine: 0.65
+    pagerank: 0.05
     heading: 0.2
     position: 0.1
 
@@ -127,19 +116,3 @@ unknown_word_detection:
   source_dirs:
   # ノイズフィルタ（Phase 2 で実装）
   filters:
-
-# ----------
-# 変換後処理パイプライン（Phase 2 以降で実装）
-# ----------
-pipeline:
-  # エラー時ポリシー（ステージごとのデフォルト）
-  # abort: 中断、skip: スキップ。未指定時は skip
-  on_error:
-    post_extract: abort
-    post_convert: skip
-  # 抽出後・Markdown変換前の処理（設定スキーマのみ。実装は別タスク）
-  post_extract:
-  # Markdown変換後に実行。上から順に直列処理。
-  # only を指定すると該当ソース種別のみ実行。
-  post_convert:
-    # - script: lib/pipeline/example.mjs

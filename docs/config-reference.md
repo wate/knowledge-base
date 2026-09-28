@@ -26,7 +26,7 @@
 | `KNOWLEDGE_BASE_DICT_DIR`        | `dictionary.system_dir`  | `knowledge-base/dict/system`             |
 | `KNOWLEDGE_BASE_USER_DICT_PATH`  | `dictionary.user_dict`   | `knowledge-base/dict/user/user-dict.bin` |
 | `KNOWLEDGE_BASE_EMBEDDING_MODEL` | `embedding.model`        | `intfloat/multilingual-e5-small`         |
-| `KNOWLEDGE_BASE_TOP_N`           | `search.top_n_documents` | `10`                                     |
+| `KNOWLEDGE_BASE_TOP_N`           | `search.top_n_documents` | `20`                                     |
 
 ### パス解決
 
@@ -52,8 +52,8 @@ sources:
 
 #### ショートハンド自動判別ルール
 
-- `http://`/`https://` 始まり → `type: web`(HTTP取得)
-- それ以外 → `type: local`(ファイルパスまたはディレクトリ)
+- `http://`/`https://` 始まり -> `type: web`(HTTP取得)
+- それ以外 -> `type: local`(ファイルパスまたはディレクトリ)
 
 #### 詳細形式のフィールド
 
@@ -96,7 +96,7 @@ source_mappings:
 
 - `match`: プロジェクトルートからの相対パスのglobパターン。これにマッチしたローカルファイルがマッピング対象となる
 - `url_template`: `{{ path }}` に `match` 以降の相対パスが展開される
-- `replace_ext`（省略可）: 拡張子の置換ルール。キー→値のマップで指定
+- `replace_ext`(省略可): 拡張子の置換ルール。キー->値のマップで指定
 
 #### 変換例
 
@@ -105,7 +105,7 @@ source_mappings:
 | `knowledge-base/external/cakephp/controllers.md`      | `https://book.cakephp.org/5/en/controllers.html`      |
 | `knowledge-base/external/cakephp/orm/associations.md` | `https://book.cakephp.org/5/en/orm/associations.html` |
 
-`source_mappings` が空（未設定）の場合は従来通り動作し、マッピングは行われない。
+`source_mappings` が空(未設定)の場合は従来通り動作し、マッピングは行われない。
 登録されたURLは `sources` テーブルに `source_type = 'ref'` として保存され、
 `search` の検索結果に `📎` 付きで表示される。
 
@@ -156,7 +156,15 @@ dictionary:
 - `user_dict`: ユーザー辞書ファイル(.bin)。存在しない場合は読み込まれない
 
 辞書が存在しない場合、`lib/lindera.mjs` の `ensureDictionary()` によりGitHub Releasesから自動ダウンロードされる。
-ダウンロードするアーカイブは`type`から決定される(例: `ipadic-neologd` → `lindera-ipadic-neologd-<version>.zip`)。
+ダウンロードするアーカイブは`type`から決定される(例: `ipadic-neologd` -> `lindera-ipadic-neologd-<version>.zip`)。
+
+#### 辞書種別を変更する手順
+
+1. `dictionary.type` を変更する
+2. `knowledge-base.mjs update-dict` を実行する。`metadata.json` の `name` が設定と一致しないため、システム辞書が自動で再取得され、ユーザー辞書も再ビルドされる
+3. `knowledge-base.mjs sync --full` を実行する。分かち書き(`chapters.content_wakati`)は旧辞書のまま残るため、全件を再取り込みする
+
+`name` が一致していても再取得したい場合(Lindera本体の更新など)は、`update-dict --force` を使う。
 
 ### `ingest`
 
@@ -165,14 +173,9 @@ dictionary:
 ```yaml
 ingest:
   min_heading_level: 3
-  exclude_patterns:
-    - node_modules/**
-    - .git/**
-    - vendor/**
 ```
 
-- `min_heading_level`: チャプター分割の最小見出しレベル
-- `exclude_patterns`: 取り込み時に除外するディレクトリ/ファイルのglobパターン
+- `min_heading_level`: チャプター分割に使う最も深い見出しレベル(h4以降は親章へ含める)
 
 ### `embedding`
 
@@ -197,10 +200,10 @@ embedding:
 
 ```yaml
 search:
-  top_n_documents: 10
+  top_n_documents: 20
   weights:
-    cosine: 0.5
-    pagerank: 0.2
+    cosine: 0.65
+    pagerank: 0.05
     heading: 0.2
     position: 0.1
   hybrid_weights:
@@ -208,9 +211,9 @@ search:
     bm25: 0.3
 ```
 
-- `top_n_documents`: 2段階検索の第1段階で取得する上位N件
+- `top_n_documents`: 2段階検索の第1段階で絞り込む文書数(`--top`の最終件数とは独立)
 - `weights`: ベクトル検索スコアの内訳(合計が1.0になるように設定)
-    - `cosine`: コサイン類似度の重み
+    - `cosine`: コサイン類似度(min-max正規化後)の重み
     - `pagerank`: PageRankスコアの重み
     - `heading`: 見出しレベル重みの重み
     - `position`: 出現位置の重み
@@ -248,51 +251,15 @@ unknown_word_detection:
 - `source_dirs`: 解析対象ディレクトリ。未指定時は `sources` のlocal型エントリを参照
 - `filters`: ノイズフィルタ設定(未実装、スケルトン)
 
-### `pipeline`
-
-変換後処理パイプラインの設定(Phase 2以降で実装予定)。
-
-```yaml
-pipeline:
-  on_error:
-    post_extract: abort
-    post_convert: skip
-  post_extract:
-  post_convert:
-```
-
-#### `on_error`
-
-エラー時ポリシー。ステージごとのデフォルト挙動を指定する。
-
-| 値      | 挙動                                                       |
-| ------- | ---------------------------------------------------------- |
-| `abort` | 中断。そのファイルの後続処理を止める                       |
-| `skip`  | スキップ。ログ出力後、加工前の文字列を次のスクリプトへ渡す |
-
-- 未指定のステージは `skip` がデフォルトとなる
-- 各スクリプトに個別の `on_error` を指定すると、ステージデフォルトを上書きできる
-
-#### `post_extract`
-
-抽出後・Markdown変換前の処理(設定スキーマのみ定義。実行機構の実装は別タスク)。
-
-#### `post_convert`
-
-Markdown変換後に実行する後処理スクリプトの設定。上から順に直列実行する。
-
-- 各スクリプトは `process(text, context)` 関数を動的ロードして実行する
-- `only` 条件を指定すると該当ソース種別のみ実行する
-
 CLI引数と設定キーの対応関係
-------------------------------
+---------------------------
 
-| CLI引数             | .knowledge-base.yml のキー           | 影響サブコマンド                      |
-| ------------------- | ------------------------------------ | ------------------------------------- |
-| `--source-dir`      | `unknown_word_detection.source_dirs` | `dict detect`                         |
-| `--limit`           | (CLI専用)                            | `dict detect`, `update-embeddings`    |
-| `--force`           | (CLI専用)                            | `update-embeddings`                   |
-| `--vector`          | (CLI専用: 検索モード切替)            | `search`                              |
-| `--hybrid`          | (CLI専用: 検索モード切替)            | `search`                              |
-| `--top`             | `search.top_n_documents`             | `search`                              |
-| `--detailed` / `-D` | (CLI専用: 出力形式切替)              | `dict export-user-dict`               |
+| CLI引数             | .knowledge-base.yml のキー           | 影響サブコマンド                   |
+| ------------------- | ------------------------------------ | ---------------------------------- |
+| `--source-dir`      | `unknown_word_detection.source_dirs` | `dict detect`                      |
+| `--limit`           | (CLI専用)                            | `dict detect`, `update-embeddings` |
+| `--force`           | (CLI専用)                            | `update-embeddings`                |
+| `--vector`          | (CLI専用: 検索モード切替)            | `search`                           |
+| `--hybrid`          | (CLI専用: 検索モード切替)            | `search`                           |
+| `--top`             | (CLI専用: 最終件数)                  | `search`                           |
+| `--detailed` / `-D` | (CLI専用: 出力形式切替)              | `dict export-user-dict`            |

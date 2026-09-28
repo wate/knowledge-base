@@ -10,19 +10,10 @@ external sources (Markdown / HTML / PDF / ...)
     ▼  ① データ収集
 lib/collect                           (source plugin: local/web/...)
     │
-    ▼  ② テキスト抽出 (lib/extract/)
-extract (pdfjs / 素通し)              バイナリ→プレーンテキスト
+    ▼  ② Markdown化 (lib/extract/)
+extract (anydoc / rehype / 素通し)    バイナリ・HTML→Markdown
     │
-    ▼  ③ 抽出後処理 (lib/pipeline/)
-[post_extract]                        後処理スクリプト直列実行
-    │
-    ▼  ④ Markdown変換
-convert (unified / 手動構造化)        テキスト→Markdown
-    │
-    ▼  ⑤ 変換後処理 (lib/pipeline/)
-[post_convert]                        後処理スクリプト直列実行
-    │
-    ▼  ⑥ YAMLフロントマター付与
+    ▼  ③ YAMLフロントマター付与
 stdout (フロントマター付きMarkdown)
     │
     ▼
@@ -70,8 +61,7 @@ DuckDB (unknown_words / pos_master)
 | PageRank           | graphology + graphology-pagerank                                  |
 | Markdownパース     | remark + remark-gfm (MDAST)                                       |
 | HTML変換           | rehype-parse + rehype-remark                                      |
-| PDF変換            | pdfjs-dist legacy build                                           |
-| Word変換           | mammoth.js                                                        |
+| 文書変換           | @firecrawl/anydoc (PDF・Office・EPUB等の19拡張子)                 |
 | スクリプト実行基盤 | zx (Node.js)                                                      |
 
 テーブル構成
@@ -90,11 +80,13 @@ DuckDB (unknown_words / pos_master)
 検索スコア設計
 -------------------------
 
+順位が決まる仕組みと各係数の意味は[検索方式](search.md)を参照。
+
 ### ベクトル検索
 
 ```
-最終スコア = cosine_similarity × 0.5
-           + PageRank(正規化) × 0.2
+最終スコア = cosine類似度(min-max正規化) × 0.65
+           + PageRank(min-max正規化) × 0.05
            + heading_weight(正規化) × 0.2
            + position_norm × 0.1
 ```
@@ -103,7 +95,7 @@ DuckDB (unknown_words / pos_master)
 
 ```
 最終スコア = ベクトルスコア(上記合算) × 0.7
-           + BM25スコア(正規化) × 0.3
+           + BM25スコア(生の値) × 0.3
 ```
 
 各係数は `.knowledge-base.yml` で外部調整可能。
@@ -127,17 +119,14 @@ DuckDB (unknown_words / pos_master)
 lib/collect (<file> / <URL> / <dir> / --source <type>)
     │
     ├ ① source検出 → plugin.collect() (local / web / ...)
-    ├ ② extract: バイナリ→プレーンテキスト(pdfjs。md/html/txtは素通し)
-    ├ ③ [post_extract]: 抽出後処理パイプライン
-    ├ ④ convert: テキスト→Markdown(unified / 手動構造化 / 素通し)
-    ├ ⑤ [post_convert]: 変換後処理パイプライン
-    └ ⑥ YAMLフロントマター付与
+    ├ ② Markdown化: バイナリはanydoc、HTMLはrehype、Markdownは素通し
+    └ ③ YAMLフロントマター付与
     │
     ▼ (stdout: フロントマター付きMarkdown)
 lib/ingest
                │
                ├ YAMLフロントマター → sourcesテーブル
-               ├ remark MDAST → チャンク分割 → chapters
+               ├ remark MDAST → textノードの正規化 → チャンク分割 → chapters
                ├ Lindera分かち書き → content_wakati
                └ PRAGMA create_fts_index (FTS自動生成)
                │
