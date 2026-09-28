@@ -127,6 +127,33 @@ zx path/to/knowledge-base.mjs update-embeddings --limit 0
 
 取り込みは `sync` に統合されています。単一ソースは `sync <src>`、変換結果の確認は `sync --dry-run` を使ってください。
 
+エラーと終了コード
+-------------------------
+
+終了コードは3種類あり、使い方の誤りと処理の失敗を区別します。
+
+| コード | 意味                           | 例                                   |
+| ------ | ------------------------------ | ------------------------------------ |
+| `0`    | 成功(該当なし・対象なしを含む) | 検索結果0件、embedding対象なし       |
+| `1`    | 実行時エラー                   | ファイル未検出、DB操作失敗、抽出失敗 |
+| `2`    | 使い方・設定エラー             | 引数不正、設定値のバリデーション違反 |
+
+- `--help`は`0`で終わります
+- 設定ファイルが見つからない場合は警告して継続し、設定が必須のコマンドのみエラーとします
+
+### 出力先
+
+- 機械可読な出力(検索結果・`--json`、CSV)は標準出力へ出します
+- 進捗・警告・エラーは標準エラーへ出します
+- 警告の破棄に`2>/dev/null`は不要です
+
+### 警告と中断
+
+- 一括系(`sync`)は1件の失敗で全体を止めず、警告を出して継続し、末尾に集計(成功・失敗・スキップ)を表示します
+- 単体系(`search`など)は失敗した時点で中断し、終了コード`1`を返します
+- 抽出に失敗したドキュメントは内容が空のまま登録せず、スキップして警告を出します
+- `catch`して握りつぶす場合は必ず警告を出します
+
 ディレクトリ構成
 -------------------------
 
@@ -134,6 +161,7 @@ zx path/to/knowledge-base.mjs update-embeddings --limit 0
 knowledge-base/
 ├ package.json            # 依存パッケージ管理
 ├ knowledge-base.mjs      # 唯一のエントリポイント(サブコマンド方式)
+├ knowledge-base.duckdb   # DuckDBデータベース(取り込み・索引)
 ├ lib/
 │ ├ collect.mjs       # 収集＋変換(単一ソース)
 │ ├ ingest.mjs        # 取り込み(チャプター分割・FTS再構築)
@@ -141,6 +169,8 @@ knowledge-base/
 │ ├ search.mjs        # BM25/ベクトル/ハイブリッド検索
 │ ├ update-embeddings.mjs  # embedding生成
 │ ├ update-pagerank.mjs    # PageRank更新(リンク解析内蔵)
+│ ├ update-dict.mjs   # 辞書の再取得・再ビルド
+│ ├ db.mjs            # DB接続(トランザクション)
 │ ├ lock.mjs          # 排他制御(O_EXCLロック)
 │ ├ errors.mjs        # 共通エラー型
 │ ├ dict/             # 辞書メンテナンス(未知語検出・CSV入出力)
@@ -151,7 +181,13 @@ knowledge-base/
 │ ├ normalize.mjs     # 取り込み時の正規化(MDASTのtextノード)
 │ └ source/           # source plugin(registry/local/web)
 ├ docs/               # ドキュメント(schema.sql, config-reference.md等)
-└ dict/               # Lindera辞書
+├ dict/               # Lindera辞書とメンテナンス用のCSV
+│ ├ system/           # システム辞書(typeで指定した種別)
+│ ├ user/             # ユーザー辞書(user-dict.bin)
+│ └ *.csv            # 未知語・品詞マスタ・ユーザー辞書ビルド用
+├ tests/              # 単体テスト(node:test)
+└ tmp/
+  └ models/           # embeddingモデルのキャッシュ
 ```
 
 DBテーブル
