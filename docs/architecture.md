@@ -71,11 +71,17 @@ DuckDB (unknown_words / pos_master)
 
 ### 外部キー制約に関する注意
 
-`sources`テーブルの`document_id`カラムは`documents.id`を参照する設計だが、**DuckDB v1.5.4ではFK制約を設定していない**。
+`sources`テーブルの`document_id`カラムは`documents.id`を参照する設計だが、**FK制約は設定していない**。
 
-理由: DuckDB v1.5.4には「Over-Eager Constraint Checking in Foreign Keys」という既知の制限があり、`FLOAT[384]`型カラムの`UPDATE`が内部で`DELETE+INSERT`に書き換えられた際にFK違反が発生する。この制限は`documents.embedding`(`FLOAT[384]`)の更新を阻害するため、`sources`テーブルからFK制約を除去し、代わりに`idx_sources_document_id`インデックスでJOIN性能を確保している。
+理由は、「Over-Eager Constraint Checking in Foreign Keys」というDuckDBの既知の制限である。
+`FLOAT[384]`型カラムの`UPDATE`が内部で`DELETE+INSERT`に書き換えられた際に、FK違反が発生する。
+この制限は`documents.embedding`(`FLOAT[384]`)の更新を阻害するため、`sources`テーブルからFK制約を除去した。
+代わりに`idx_sources_document_id`インデックスでJOIN性能を確保している。
 
-参照整合性はアプリケーションレベル(`lib/db.mjs` のトランザクションによる `BEGIN/COMMIT/ROLLBACK`)で担保する。この制限はDuckDBの将来バージョンで解消される可能性がある。
+この制限はDuckDB v1.5.5でも再現する(`documents.embedding`の`UPDATE`が`Violates foreign key constraint`で失敗することを実測で確認)。
+一方、FK制約の検査自体は機能しており、参照先の存在しない行の`INSERT`は拒否される。
+
+参照整合性はアプリケーションレベル(`lib/db.mjs`のトランザクションによる`BEGIN/COMMIT/ROLLBACK`)で担保する。
 
 検索スコア設計
 -------------------------
