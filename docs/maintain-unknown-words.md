@@ -132,6 +132,9 @@ npm run build-user-dict
 npm run build-user-dict -- --csv path/to/user-dict.csv
 ```
 
+出力対象のレコードが0件の場合はCSVが出力されない。
+そのため`update-dict`はビルドをスキップし、警告を出して終了コード0で終わる(対象なしを成功として扱う)。
+
 ### 辞書種別を変えたとき
 
 `dictionary.type` を変えると、`update-dict` がシステム辞書を再取得し、ユーザー辞書も再ビルドする。
