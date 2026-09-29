@@ -54,7 +54,7 @@ DuckDB (unknown_words / pos_master)
 | 設定管理           | .knowledge-base.yml + lib/config.mjs (zx/js-yaml)                 |
 | ベクトル化モデル   | intfloat/multilingual-e5-small (384次元)                          |
 | ベクトル化実行基盤 | @huggingface/transformers (Node.js)                               |
-| 形態素解析         | lindera (NAPI-RS, ipadic-neologd辞書)                             |
+| 形態素解析         | lindera (NAPI-RS, ipadic辞書)                                     |
 | ユーザー辞書ビルド | Lindera CLI (`lindera build --user`)                              |
 | ベクトルDB         | DuckDB (FLOAT[384] + list_cosine_similarity) via @duckdb/node-api |
 | FTSエンジン        | DuckDB FTS拡張 (BM25) via @duckdb/node-api                        |

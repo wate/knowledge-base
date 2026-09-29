@@ -19,10 +19,10 @@ sources:
   # ソース単位の除外パターン指定例
   - path: knowledge-base/external/cakephp
     exclude_patterns:
-      - "**/404.md"
-      - "**/contents.md"
-      - "**/epub-contents.md"
-      - "**/pdf-contents.md"
+      - '**/404.md'
+      - '**/contents.md'
+      - '**/epub-contents.md'
+      - '**/pdf-contents.md'
 
 # ----------
 # ローカルファイル↔原本URLマッピング
@@ -30,8 +30,8 @@ sources:
 # Gitでクローンしたドキュメントと公式URLの対応関係を定義する。
 # 検索結果に原本URL（📎）が表示され、ワンクリックで公式サイトを確認できる。
 source_mappings:
-  - match: "knowledge-base/external/cakephp/**"
-    url_template: "https://book.cakephp.org/5/en/{{ path }}"
+  - match: 'knowledge-base/external/cakephp/**'
+    url_template: 'https://book.cakephp.org/5/en/{{ path }}'
     replace_ext:
       .md: .html
 
@@ -45,6 +45,15 @@ source_local:
     - vendor/**
 
 # ----------
+# パスの基準とキャッシュ
+# ----------
+# 設定内の相対パスは base_dir 基準で解決する(既定: 実行ディレクトリ)
+# base_dir: .
+# 辞書とモデルのキャッシュのルート(既定: knowledge-base.mjs と同じ階層の .cache)
+# 辞書は cache_dir/dict、モデルは cache_dir/models に置かれる
+# cache_dir: .cache
+
+# ----------
 # データベース
 # ----------
 database:
@@ -55,12 +64,12 @@ database:
 # Lindera辞書
 # ----------
 dictionary:
-  # 辞書種別(ipadic / unidic / ko-dic...)
+  # 辞書種別(ipadic / unidic / ko-dic...)。既定は ipadic
   type: ipadic
-  # システム辞書ディレクトリ（固定パス。type はこのディレクトリに入れる辞書の種別）
-  system_dir: dict/system
-  # ユーザー辞書ファイル（存在しない場合は読み込まない）
-  user_dict: dict/user/user-dict.bin
+  # システム辞書ディレクトリ(既定: cache_dir/dict/system。変則配置のときだけ指定する)
+  # system_dir: path/to/dict
+  # ユーザー辞書ファイル(既定: cache_dir/dict/user/user-dict.bin)
+  # user_dict: path/to/user-dict.bin
 
 # ----------
 # ドキュメント取り込み
@@ -76,7 +85,8 @@ embedding:
   model: intfloat/multilingual-e5-small
   dimensions: 384
   batch_size: 32
-  cache_dir: tmp/models
+  # モデルキャッシュ(既定: cache_dir/models。変則配置のときだけ指定する)
+  # cache_dir: path/to/models
 
 # ----------
 # 検索スコア係数（合計が1.0になるように設定）

@@ -113,15 +113,16 @@ zx path/to/knowledge-base.mjs update-embeddings --limit 0
 
 すべて `knowledge-base.mjs` のサブコマンドとして実行します(`--help`で一覧を表示できます)。
 
-| コマンド                                | 用途                                              |
-| --------------------------------------- | ------------------------------------------------- |
-| `knowledge-base.mjs sync [<src>]`       | 収集・取り込み・索引更新(差分更新)                |
-| `knowledge-base.mjs update-embeddings`  | embedding生成(未処理のみ/`--limit 0`で全件再生成) |
-| `knowledge-base.mjs update-pagerank [<dir>]` | PageRank更新                                      |
-| `knowledge-base.mjs search <query>`     | BM25全文検索                                      |
-| `knowledge-base.mjs search --vector <query>` | ベクトル検索                                      |
-| `knowledge-base.mjs search --hybrid <query>` | ハイブリッド検索                                  |
-| `knowledge-base.mjs dict <操作>`        | 辞書メンテナンス(未知語検出・CSV入出力)           |
+| コマンド                                     | 用途                                                              |
+| -------------------------------------------- | ----------------------------------------------------------------- |
+| `knowledge-base.mjs sync [<src>]`            | 収集・取り込み・索引更新(差分更新)                                |
+| `knowledge-base.mjs update-embeddings`       | embedding生成(未処理のみ/`--limit 0`で全件再生成)                 |
+| `knowledge-base.mjs update-pagerank [<dir>]` | PageRank更新                                                      |
+| `knowledge-base.mjs search <query>`          | BM25全文検索                                                      |
+| `knowledge-base.mjs search --vector <query>` | ベクトル検索                                                      |
+| `knowledge-base.mjs search --hybrid <query>` | ハイブリッド検索                                                  |
+| `knowledge-base.mjs update-dict`             | 辞書の再取得とユーザー辞書の再ビルド(`--force`・`--csv`)          |
+| `knowledge-base.mjs dict <操作>`             | 辞書メンテナンス(未知語検出・CSV入出力。`--input`で入力CSVを指定) |
 
 ### 注意
 
@@ -181,13 +182,12 @@ knowledge-base/
 │ ├ normalize.mjs     # 取り込み時の正規化(MDASTのtextノード)
 │ └ source/           # source plugin(registry/local/web)
 ├ docs/               # ドキュメント(schema.sql, config-reference.md等)
-├ dict/               # Lindera辞書とメンテナンス用のCSV
-│ ├ system/           # システム辞書(typeで指定した種別)
-│ ├ user/             # ユーザー辞書(user-dict.bin)
-│ └ *.csv            # 未知語・品詞マスタ・ユーザー辞書ビルド用
-├ tests/              # 単体テスト(node:test)
-└ tmp/
-  └ models/           # embeddingモデルのキャッシュ
+├ dict/               # 辞書メンテナンス用のCSV(移行前の出力先)
+├ .cache/             # 辞書とモデルのキャッシュ(既定の置き場所)
+│ ├ dict/system/      # システム辞書(typeで指定した種別)
+│ ├ dict/user/        # ユーザー辞書(user-dict.bin)
+│ └ models/           # embeddingモデルのキャッシュ
+└ tests/              # 単体テスト(node:test)
 ```
 
 DBテーブル

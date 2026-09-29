@@ -12,8 +12,8 @@ knowledge-base.duckdb.*
 node_modules/
 package-lock.json
 
-# Transformers model cache（tmp/models/ に移動。config/models/ は旧形式）
-config/models/
+# Transformers model cache and Lindera dictionary cache
+.cache/
 
 # Temporary conversion output
 tmp/

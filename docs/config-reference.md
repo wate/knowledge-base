@@ -15,26 +15,40 @@
 | -------- | ------------------- | -------------------------------------------- |
 | 1        | CLI引数             | `--source-dir docs`                          |
 | 2        | .knowledge-base.yml | 設定ファイルに明示的に書かれた値             |
-| 3        | 環境変数            | `KNOWLEDGE_BASE_DB_PATH=/path/to/db`         |
+| 3        | 環境変数            | `KNOWLEDGE_BASE_CACHE_DIR=/path/to/cache`    |
 | 4        | デフォルト値        | 各スクリプトに組み込まれた初期値(後方互換用) |
 
 ### 環境変数一覧
 
-| 環境変数                         | 対応設定項目             | デフォルト値                             |
-| -------------------------------- | ------------------------ | ---------------------------------------- |
-| `KNOWLEDGE_BASE_DB_PATH`         | `database.path`          | `knowledge-base.duckdb`                  |
-| `KNOWLEDGE_BASE_DICT_DIR`        | `dictionary.system_dir`  | `knowledge-base/dict/system`             |
-| `KNOWLEDGE_BASE_USER_DICT_PATH`  | `dictionary.user_dict`   | `knowledge-base/dict/user/user-dict.bin` |
-| `KNOWLEDGE_BASE_EMBEDDING_MODEL` | `embedding.model`        | `intfloat/multilingual-e5-small`         |
-| `KNOWLEDGE_BASE_TOP_N`           | `search.top_n_documents` | `20`                                     |
+| 環境変数                   | 対応設定項目  | デフォルト値                          |
+| -------------------------- | ------------- | ------------------------------------- |
+| `KNOWLEDGE_BASE_BASE_DIR`  | `base_dir`    | 実行ディレクトリ                      |
+| `KNOWLEDGE_BASE_CACHE_DIR` | `cache_dir`   | `knowledge-base.mjs`と同じ階層の`.cache` |
 
 ### パス解決
 
-`.knowledge-base.yml` 内の相対パスは**ワーキングディレクトリ(プロセスカレント)**基準で絶対パスに解決する。
+`.knowledge-base.yml` 内の相対パスは **`base_dir`(既定: ワーキングディレクトリ)** 基準で絶対パスに解決する。
 npm scriptsを `knowledge-base/` から実行する場合はパスの先頭に `knowledge-base/` を付けず、カレントディレクトリからの相対パスで記述する。
+辞書とモデルのパスは `cache_dir` から導出するため、通常は指定しなくてよい(個別指定した値が優先される)。
+CSVの入出力は実行ディレクトリ直下が既定になる。
 
 設定セクション一覧
 -------------------------
+
+### `base_dir` と `cache_dir`
+
+パスの基準とキャッシュのルートを決めるトップレベル設定。
+
+```yaml
+base_dir: .
+cache_dir: .cache
+```
+
+- `base_dir`: 設定内の相対パスを解決する基準(既定: 実行ディレクトリ)
+- `cache_dir`: 辞書とモデルのキャッシュのルート(既定: `knowledge-base.mjs`と同じ階層の`.cache`)。`base_dir`基準の相対パスで指定する
+
+`dictionary.system_dir`・`dictionary.user_dict`・`embedding.cache_dir`の既定値は`cache_dir`から導出する。
+個別に指定した場合はその値が優先される。
 
 ### `sources`
 
@@ -147,13 +161,13 @@ Lindera形態素解析エンジンの辞書設定。
 ```yaml
 dictionary:
   type: ipadic
-  system_dir: dict/system
-  user_dict: dict/user/user-dict.bin
+  # system_dir: path/to/dict
+  # user_dict: path/to/user-dict.bin
 ```
 
-- `type`: 辞書種別(`ipadic`/`unidic`/`ko-dic`...)。`system_dir` に配置する辞書の種類を指定
-- `system_dir`: システム辞書ディレクトリ。固定パスで、`type` の切り替え時は同じディレクトリに上書き配置する
-- `user_dict`: ユーザー辞書ファイル(.bin)。存在しない場合は読み込まれない
+- `type`: 辞書種別(`ipadic`/`unidic`/`ko-dic`...)。既定は`ipadic`。`system_dir` に配置する辞書の種類を指定
+- `system_dir`: システム辞書ディレクトリ(既定: `<cache_dir>/dict/system`)。`type` の切り替え時は同じディレクトリに上書き配置する
+- `user_dict`: ユーザー辞書ファイル(.bin、既定: `<cache_dir>/dict/user/user-dict.bin`)。存在しない場合は読み込まれない
 
 辞書が存在しない場合、`lib/lindera.mjs` の `ensureDictionary()` によりGitHub Releasesから自動ダウンロードされる。
 ダウンロードするアーカイブは`type`から決定される(例: `ipadic-neologd` -> `lindera-ipadic-neologd-<version>.zip`)。
@@ -186,13 +200,13 @@ embedding:
   model: intfloat/multilingual-e5-small
   dimensions: 384
   batch_size: 32
-  cache_dir: tmp/models
+  # cache_dir: <cache_dir>/models
 ```
 
 - `model`: HuggingFaceのembeddingモデル名
 - `dimensions`: 出力ベクトルの次元数
 - `batch_size`: バッチサイズ
-- `cache_dir`: モデルキャッシュディレクトリ(ワーキングディレクトリからの相対パス、デフォルト: `tmp/models`)
+- `cache_dir`: モデルキャッシュディレクトリ(既定: `<cache_dir>/models`)
 
 ### `search`
 

@@ -65,7 +65,7 @@ npm run detect-unk -- --source-dir ../docs
 npm run export-unknown-words
 ```
 
-出力先: `dict/unknown-words.csv`(全カラム、ヘッダーあり)
+出力先: `unknown-words.csv`(実行ディレクトリ直下、全カラム、ヘッダーあり)
 
 CSVをExcelやVS Codeで開き、以下のカラムを編集する。
 
@@ -81,11 +81,14 @@ CSVをExcelやVS Codeで開き、以下のカラムを編集する。
 ### 編集済みCSVの取り込み
 
 ```bash
-# デフォルトのunknown-words.csvを取り込み
+# 既定のunknown-words.csv(実行ディレクトリ直下)を取り込み
 npm run import-unknown-words
 
-# 任意のCSVを指定
+# 任意のCSVを位置引数で指定
 npm run import-unknown-words -- path/to/edited.csv
+
+# --inputでも指定できる
+npm run import-unknown-words -- --input path/to/edited.csv
 ```
 
 CSVの `pos_name` は自動的に `pos_master` テーブルとJOINして解決される。
@@ -121,14 +124,30 @@ npm run build-user-dict
 ```
 
 上記で `export-user-dict` + `lindera build --user` が順次実行され、
-`dict/user/user-dict.bin` が生成される。
+`dictionary.user_dict`(既定: `.cache/dict/user/user-dict.bin`)が生成される。
+
+取り込むCSVを指定する場合は `--csv` を使う。
+
+```bash
+npm run build-user-dict -- --csv path/to/user-dict.csv
+```
+
+### 辞書種別を変えたとき
+
+`dictionary.type` を変えると、`update-dict` がシステム辞書を再取得し、ユーザー辞書も再ビルドする。
+分かち書き(`chapters.content_wakati`)は旧辞書のまま残るため、`sync --full` で全件を再取り込みする。
+
+```bash
+npm run build-user-dict
+zx knowledge-base.mjs sync --full
+```
 
 ### 分かち書きの確認
 
 ```bash
 echo "DuckDBとCakePHPを利用する" | lindera tokenize \
-  --dict dict/system \
-  --user-dict dict/user/user-dict.bin \
+  --dict .cache/dict/system \
+  --user-dict .cache/dict/user/user-dict.bin \
   -o wakati
 ```
 
@@ -195,7 +214,7 @@ LIMIT 1;
 
 いずれも `knowledge-base.mjs` のサブコマンドとして実行する。
 
-- `dict/unknown-words.csv` - レビュー用CSV
-- `dict/pos-master.csv` - 品詞マスタCSV
-- `dict/user-dict.csv` - ビルド用CSV
-- `dict/user/user-dict.bin` - コンパイル済みユーザー辞書
+- `unknown-words.csv` - レビュー用CSV(実行ディレクトリ直下)
+- `pos-master.csv` - 品詞マスタCSV(実行ディレクトリ直下)
+- `user-dict.csv` - ビルド用CSV(実行ディレクトリ直下)
+- `.cache/dict/user/user-dict.bin` - コンパイル済みユーザー辞書
