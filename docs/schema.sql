@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS documents (
     id              INTEGER PRIMARY KEY DEFAULT nextval('documents_id_seq'), -- ドキュメントの一意識別子
     file_path       VARCHAR UNIQUE, -- URI識別子。ローカルは相対パス、WebはURL、ツールは scheme://...
     content         TEXT,          -- YAMLフロントマター除去後のMarkdown全文
-    summary         TEXT,          -- 見出しtree構造テキスト（h1〜h6をインデントで表現、embeddingの入力）
+    summary         TEXT,          -- 見出しtree構造テキスト。見出しが無い場合は本文の先頭段落（embeddingの入力）
     embedding       FLOAT[384],    -- summary（見出しtree）をベクトル化した384次元ベクトル
     pagerank_score  FLOAT DEFAULT 1.0, -- doc_linksのリンク構造からPageRankアルゴリズムで算出した重要度スコア
     modified        TIMESTAMP      -- ファイルの最終更新日時（mtime）
