@@ -11,21 +11,26 @@
     "import-pos-master": "zx knowledge-base.mjs dict import-pos-master",
     "export-user-dict": "zx knowledge-base.mjs dict export-user-dict",
     "export-user-dict-detailed": "zx knowledge-base.mjs dict export-user-dict --detailed",
-    "build-user-dict": "zx knowledge-base.mjs update-dict"
+    "build-user-dict": "zx knowledge-base.mjs update-dict",
+    "deps:check": "ncu",
+    "deps:update": "ncu -u"
   },
   "dependencies": {
-    "@duckdb/node-api": "^1.5.5-r.1",
+    "@duckdb/node-api": "^1.5.6-r.1",
     "@firecrawl/anydoc": "0.2.4",
-    "@huggingface/transformers": "^4.2.0",
-    "graphology": "^0.25.4",
+    "@huggingface/transformers": "^4.3.1",
+    "graphology": "^0.26.0",
     "graphology-pagerank": "^1.1.0",
     "lindera": "^6.2.0",
-    "picomatch": "^4.0.5",
+    "picomatch": "^4.0.7",
     "rehype-parse": "^9.0.1",
     "rehype-remark": "^10.0.1",
-    "remark": "^15.0.0",
-    "remark-gfm": "^4.0.0",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.1",
     "remark-stringify": "^11.0.0",
-    "unist-util-visit": "^5.0.0"
+    "unist-util-visit": "^5.1.0"
+  },
+  "devDependencies": {
+    "npm-check-updates": "^23.1.1"
   }
 }
