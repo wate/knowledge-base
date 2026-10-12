@@ -34,3 +34,10 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+### direnv ###
+.direnv
+.envrc
+
+### dotenv ###
+.env
