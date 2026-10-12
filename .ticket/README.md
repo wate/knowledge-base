@@ -1,0 +1,175 @@
+MD-Ticket
+=========================
+
+軽量なテキストベースのチケット管理の仕組みです。  
+プロジェクト管理ツールを使うほどでもないアイデアやタスクをMarkdownで記録します。
+
+この仕組みはシンプルさを重視しています。  
+チケットを分類し、テンプレートを使い、必要に応じて更新・削除・ADR化することで、  
+小規模プロジェクトでも継続的に整然とした記録が保てます。
+
+詳細な運用方法や実践例は[USAGE.md](USAGE.md)を参照してください。
+
+導入方法
+-------------------------
+
+### インストール
+
+```bash
+# ワンライナーでインストール
+curl -fsSL https://raw.githubusercontent.com/wate/MD-Ticket/master/install.sh | bash
+
+# カスタムディレクトリにインストール
+TICKET_DIR=.custom curl -fsSL https://raw.githubusercontent.com/wate/MD-Ticket/master/install.sh | bash
+
+# または
+curl -fsSL https://raw.githubusercontent.com/wate/MD-Ticket/master/install.sh | bash -s -- --dir=.custom
+
+# 既存環境を最新版に更新(テンプレート・ドキュメントのみ上書き)
+curl -fsSL https://raw.githubusercontent.com/wate/MD-Ticket/master/install.sh | bash -s -- --force
+
+# developブランチからインストール
+curl -fsSL https://raw.githubusercontent.com/wate/MD-Ticket/master/install.sh | bash -s -- --branch=develop
+
+# 手動インストール
+git clone https://github.com/wate/MD-Ticket.git
+cp -r MD-Ticket/.ticket /path/to/your/project/
+rm -rf MD-Ticket
+```
+
+#### オプション
+
+- `--dir=DIR` または `-d DIR`: インストール先ディレクトリ指定 (デフォルト: `.ticket`)
+- `--branch=BRANCH` または `-b BRANCH`: ダウンロード元ブランチ指定 (デフォルト: `master`)
+- `--force` または `-f`: 既存環境を上書き更新(既存チケットは保持)
+- `--help` または `-h`: ヘルプ表示
+
+#### 環境変数
+
+- `TICKET_DIR`: インストール先ディレクトリ (`--dir`オプションで上書き可能)
+- `TICKET_BRANCH`: ダウンロード元ブランチ (`--branch`オプションで上書き可能)
+
+### AGENTS.md統合
+
+AIエージェントと連携する場合、プロジェクトルートの`AGENTS.md`にチケット管理セクションを追加してください。
+詳細は後述の「AGENTS.md統合ガイド」を参照してください。
+
+ディレクトリ構造
+-------------------------
+
+```
+.ticket/
+  ├ README.md      => このファイル
+  ├ AGENTS.md      => エージェント向けガイドライン
+  ├ LICENSE        => MITライセンス
+  ├ config.yml     => チケット種別の設定ファイル(任意)
+  ├ _archive/      => アーカイブ済みチケットを年月別に保存するディレクトリ
+  │  └ _files/        => アーカイブ済みチケットの参考資料を格納するディレクトリ
+  ├ _files/        => チケットに関連する参考資料を格納するディレクトリ
+  ├ _shared/       => チケット文脈で参照される情報やADRなどの共有リソースを格納するディレクトリ
+  │  ├ adr/           => ADR(Architecture Decision Record)を格納するサブディレクトリ
+  │  └ prd/           => PRD(Product Requirements Document)を格納するサブディレクトリ
+  ├ _template/     => 各ファイルのテンプレートを格納するディレクトリ
+  │  ├ adr.md         => ADR(Architecture Decision Record)のテンプレートファイル
+  │  ├ bug.md         => 不具合報告のテンプレートファイル
+  │  ├ idea.md        => アイデアのテンプレートファイル
+  │  ├ request.md     => 要望のテンプレートファイル
+  │  └ task.md        => タスクのテンプレートファイル
+  ├ bug/          => 不具合報告ファイルを格納するディレクトリ
+  ├ idea/         => アイデアファイルを格納するディレクトリ
+  ├ request/      => 要望ファイルを格納するディレクトリ
+  └ task/         => タスクファイルを格納するディレクトリ
+     ├ parent-ticket.md       => 親チケット
+     └ parent-ticket/         => 子チケット用サブディレクトリ(親と同名)
+        ├ child-a.md
+        └ child-b.md
+```
+
+運用方法
+-------------------------
+
+1. チケット作成
+    - `_template/` から種別に合ったテンプレートをコピー  
+      例: `cp _template/task.md task/add-feature.md`
+    - 必須項目を埋め、不明点は記入せず確認する
+    - 内容に応じて以下のディレクトリに保存
+        - アイデア -> `idea/`
+        - 要望 -> `request/`
+        - タスク -> `task/`
+        - バグ -> `bug/`
+2. 更新・整理
+    - 追加情報があれば既存チケットを直接更新
+    - 状況に応じてディレクトリを移動(例: アイデア→タスク)  
+      例: `mv request/add-feature.md task/add-feature.md`
+    - 完了・不要になったチケットは削除または必要に応じてアーカイブ
+3. チケットのクローズ
+    - 完了したチケットは基本的に削除する
+    - 対応内容や参考資料を残したい場合はアーカイブに保存
+    - アーカイブの詳細は[USAGE.md](USAGE.md)の「アーカイブ運用」を参照
+4. 親子チケット
+    - 子チケットが必要な場合、親チケットと同名のサブディレクトリに配置  
+      例: `task/migrate-database/schema-update.md`
+    - 親チケットは種別ディレクトリに直接配置したまま
+    - 参考資料は子チケットであっても`_files/`に配置(サブディレクトリには置かない)
+5. 関連管理
+    - 関連チケットは本文下部にMarkdownリンクで記載  
+      例: `関連チケット: [task/add-feature.md](../task/add-feature.md)`
+6. ADR・共有情報
+    - 重要な判断は `_shared/adr/` にADRとして記録
+    - 共通メモや用語集は `_shared/` に配置
+7. 参考資料の管理
+    - チケットに関連するファイル(ドラフト、スクリーンショット、参考資料等)は `_files/` に配置
+    - ファイル名は `{ticket-name}-{suffix}.{ext}` 形式を推奨  
+      例: `add-feature-draft.md`, `fix-login-screenshot.png`
+    - 複数ファイルがある場合はサフィックスで区別  
+      例: `add-feature-draft-requirements.md`, `add-feature-draft-design.md`
+    - チケット本文から相対パスでリンク  
+      例: `[ドラフト](../_files/add-feature-draft.md)`
+8. Git管理 (任意)
+    - Gitを利用すれば履歴追跡と復元が可能
+    - 個人プロジェクトなどの場合は非Gitでも運用可
+
+テンプレートを用いてチケットを分類・作成し、成熟度に応じて移動・削除する。  
+重要な決定はADR化し、関連チケットを明示して管理する。
+
+種別について
+-------------------------
+
+| 種別     | 内容                 | 最低限含む項目                           |
+| -------- | -------------------- | ---------------------------------------- |
+| アイデア | 発想・構想段階のメモ | 概要・背景・理由                         |
+| 要望     | 実現してほしい希望   | 概要・背景・理由・期待する成果物         |
+| タスク   | 実行すべき作業       | テンプレートのすべての見出し             |
+| バグ     | 不具合の報告         | 概要・再現手順・期待する動作・実際の動作 |
+
+設定ファイル(任意)
+-------------------------
+
+チケット種別をカスタマイズしたい場合、`.ticket/config.yml`で管理できます。  
+設定ファイルがない場合はデフォルトの4種別(bug/task/idea/request)が使用されます。
+
+詳細な設定方法やカスタム種別の追加例は[AGENTS.md](AGENTS.md)を参照してください。
+
+AGENTS.md統合ガイド
+-------------------------
+
+AIエージェント(GitHub Copilot、Claude、ChatGPTなど)がMD-Ticketの存在を認識できるよう、プロジェクトルートの`AGENTS.md`にチケット管理セクションの追加を推奨します。
+
+### 統合方法
+
+プロジェクトルートの`AGENTS.md`に以下のセクションを追加してください。
+
+```markdown
+チケット管理
+-------------------------
+
+Markdownベースの軽量チケット管理(MD-Ticket)を使用しています。
+チケットの作成・管理は`.ticket/`配下で行います。
+
+詳細なルールとテンプレートは[チケット管理ガイド](.ticket/AGENTS.md)を参照してください。
+```
+
+ライセンス
+-------------------------
+
+MIT License - 詳細は[LICENSE](LICENSE)を参照してください。
