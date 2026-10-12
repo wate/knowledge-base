@@ -17,6 +17,8 @@ Markdown・HTML・PDFなどのドキュメントをDuckDBへ取り込み、BM25�
 
 ```
 knowledge-base/
+├ .github/                # GitHub Copilot設定(instructions・processes・prompts・hooks)
+├ .ticket/                # チケット管理(MD-Ticket)
 ├ knowledge-base.mjs      # 唯一のエントリポイント(サブコマンド方式)
 ├ package.json            # 依存パッケージとnpmスクリプト
 ├ lib/                    # 機能モジュール
@@ -33,6 +35,7 @@ knowledge-base/
 │ ├ extract/              # 変換モジュール(anydoc・registry)
 │ └ source/               # source plugin(registry・local・web)
 ├ docs/                   # 設計・仕様ドキュメント
+├ scripts/                # 開発用スクリプト(設定の取り込みなど)
 └ tests/                  # 単体テスト(node:testをzx経由で実行)
 ```
 
